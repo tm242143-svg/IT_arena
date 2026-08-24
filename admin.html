@@ -1,0 +1,1355 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>IT Arena | Admin Control Room</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        /* =====================================================
+           ADMIN PAGE
+        ===================================================== */
+
+        .admin-container {
+            padding-bottom: 60px;
+        }
+
+        /* =====================================================
+           ADMIN MESSAGE
+        ===================================================== */
+
+        .admin-message {
+            min-height: 25px;
+            margin: 15px 0;
+            padding: 0;
+            font-weight: 600;
+        }
+
+        .admin-message.success {
+            color: #36e39a;
+        }
+
+        .admin-message.error {
+            color: #ff6464;
+        }
+
+        /* =====================================================
+           ADMIN STATISTICS
+        ===================================================== */
+
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+            margin: 25px 0;
+        }
+
+        .stat-card {
+            padding: 22px;
+            border-radius: 16px;
+
+            background:
+                rgba(255, 255, 255, 0.06);
+
+            border:
+                1px solid rgba(255, 255, 255, 0.10);
+
+            backdrop-filter: blur(10px);
+
+            transition:
+                transform .25s ease,
+                border-color .25s ease,
+                background .25s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+
+            border-color:
+                rgba(255, 255, 255, 0.22);
+
+            background:
+                rgba(255, 255, 255, 0.09);
+        }
+
+        .stat-card span {
+            display: block;
+
+            font-size: 12px;
+
+            letter-spacing: 1px;
+
+            opacity: .65;
+
+            margin-bottom: 8px;
+        }
+
+        .stat-card strong {
+            display: block;
+
+            font-size: 30px;
+
+            line-height: 1.2;
+        }
+
+        /* =====================================================
+           CREATE / CSV GRID
+        ===================================================== */
+
+        .admin-tools {
+            display: grid;
+
+            grid-template-columns:
+                minmax(0, 1fr)
+                minmax(0, 1fr);
+
+            gap: 22px;
+
+            margin-bottom: 25px;
+        }
+
+        .panel {
+            min-width: 0;
+        }
+
+        /* =====================================================
+           FORMS
+        ===================================================== */
+
+        .admin-form {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .admin-form label {
+            display: flex;
+            flex-direction: column;
+
+            gap: 7px;
+
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .admin-form input,
+        .admin-form textarea,
+        .admin-form select {
+            width: 100%;
+
+            box-sizing: border-box;
+
+            padding: 12px 14px;
+
+            border-radius: 10px;
+
+            border:
+                1px solid rgba(255, 255, 255, .12);
+
+            background:
+                rgba(255, 255, 255, .05);
+
+            color: inherit;
+
+            outline: none;
+
+            font-family: inherit;
+
+            transition:
+                border-color .2s ease,
+                background .2s ease;
+        }
+
+        .admin-form textarea {
+            resize: vertical;
+            min-height: 90px;
+        }
+
+        .admin-form input:focus,
+        .admin-form textarea:focus,
+        .admin-form select:focus {
+            border-color:
+                rgba(100, 180, 255, .6);
+
+            background:
+                rgba(255, 255, 255, .08);
+        }
+
+        /* =====================================================
+           CSV UPLOAD
+        ===================================================== */
+
+        .upload-box {
+            border:
+                2px dashed rgba(255, 255, 255, .20);
+
+            border-radius: 16px;
+
+            padding: 25px;
+
+            text-align: center;
+
+            margin-top: 18px;
+
+            transition:
+                border-color .25s ease,
+                background .25s ease;
+        }
+
+        .upload-box:hover {
+            border-color:
+                rgba(255, 255, 255, .38);
+
+            background:
+                rgba(255, 255, 255, .03);
+        }
+
+        .upload-box input[type="file"] {
+            width: 100%;
+
+            margin: 10px 0 18px;
+
+            cursor: pointer;
+        }
+
+        .csv-actions {
+            display: flex;
+
+            gap: 10px;
+
+            flex-wrap: wrap;
+
+            justify-content: center;
+        }
+
+        /* =====================================================
+           CSV SUMMARY
+        ===================================================== */
+
+        .import-summary {
+            display: flex;
+
+            gap: 12px;
+
+            flex-wrap: wrap;
+
+            margin-top: 18px;
+        }
+
+        .summary-item {
+            min-width: 90px;
+
+            padding: 12px 16px;
+
+            border-radius: 11px;
+
+            background:
+                rgba(255, 255, 255, .06);
+
+            border:
+                1px solid rgba(255, 255, 255, .08);
+        }
+
+        .summary-item span {
+            display: block;
+
+            font-size: 11px;
+
+            opacity: .65;
+
+            margin-bottom: 4px;
+        }
+
+        .summary-item strong {
+            display: block;
+
+            font-size: 20px;
+        }
+
+        /* =====================================================
+           CSV ERRORS
+        ===================================================== */
+
+        .error-list {
+            margin-top: 15px;
+
+            padding: 15px;
+
+            border-radius: 12px;
+
+            background:
+                rgba(255, 50, 50, .08);
+
+            border:
+                1px solid rgba(255, 70, 70, .15);
+
+            max-height: 220px;
+
+            overflow-y: auto;
+        }
+
+        .error-list strong {
+            display: block;
+
+            margin-bottom: 8px;
+
+            color: #ff7272;
+        }
+
+        .error-list p {
+            margin: 5px 0;
+
+            font-size: 13px;
+
+            line-height: 1.5;
+        }
+
+        /* =====================================================
+           CSV PREVIEW
+        ===================================================== */
+
+        .preview-wrapper {
+            width: 100%;
+
+            overflow-x: auto;
+
+            margin-top: 18px;
+
+            border-radius: 12px;
+        }
+
+        .preview-table {
+            width: 100%;
+
+            min-width: 1050px;
+
+            border-collapse: collapse;
+        }
+
+        .preview-table th,
+        .preview-table td {
+            padding: 10px 12px;
+
+            border-bottom:
+                1px solid rgba(255, 255, 255, .08);
+
+            text-align: left;
+
+            vertical-align: top;
+
+            font-size: 13px;
+        }
+
+        .preview-table th {
+            font-size: 12px;
+
+            text-transform: uppercase;
+
+            letter-spacing: .5px;
+
+            opacity: .7;
+
+            background:
+                rgba(255, 255, 255, .04);
+        }
+
+        .preview-table td:nth-child(3) {
+            min-width: 250px;
+
+            max-width: 350px;
+
+            white-space: normal;
+        }
+
+        .valid-row {
+            background:
+                rgba(0, 255, 120, .035);
+        }
+
+        .invalid-row {
+            background:
+                rgba(255, 60, 60, .08);
+        }
+
+        /* =====================================================
+           QUESTION SEARCH / FILTER
+        ===================================================== */
+
+        .question-tools {
+            display: flex;
+
+            gap: 12px;
+
+            flex-wrap: wrap;
+
+            margin-bottom: 18px;
+        }
+
+        .question-tools input,
+        .question-tools select {
+            flex: 1;
+
+            min-width: 200px;
+
+            padding: 12px 14px;
+
+            border-radius: 10px;
+
+            border:
+                1px solid rgba(255, 255, 255, .12);
+
+            background:
+                rgba(255, 255, 255, .05);
+
+            color: inherit;
+
+            outline: none;
+        }
+
+        .question-tools input:focus,
+        .question-tools select:focus {
+            border-color:
+                rgba(100, 180, 255, .6);
+        }
+
+        /* =====================================================
+           ACTION BUTTONS
+        ===================================================== */
+
+        .action-buttons {
+            display: flex;
+
+            gap: 7px;
+
+            flex-wrap: wrap;
+        }
+
+        .btn.danger,
+        button.danger {
+            background: #b42323;
+
+            color: white;
+
+            border: none;
+        }
+
+        .btn.danger:hover,
+        button.danger:hover {
+            background: #d52e2e;
+        }
+
+        .btn.warning {
+            background: #a56a00;
+
+            color: white;
+        }
+
+        /* =====================================================
+           STATUS
+        ===================================================== */
+
+        .status {
+            display: inline-block;
+
+            padding: 5px 10px;
+
+            border-radius: 20px;
+
+            font-size: 12px;
+
+            font-weight: 700;
+        }
+
+        .status.active {
+            background:
+                rgba(0, 255, 120, .10);
+
+            color: #42e89b;
+        }
+
+        .status.blocked {
+            background:
+                rgba(255, 60, 60, .12);
+
+            color: #ff7373;
+        }
+
+        /* =====================================================
+           TABLE
+        ===================================================== */
+
+        .table-card {
+            width: 100%;
+
+            overflow-x: auto;
+
+            border-radius: 12px;
+        }
+
+        .table-card table {
+            min-width: 700px;
+
+            width: 100%;
+
+            border-collapse: collapse;
+        }
+
+        .table-card th,
+        .table-card td {
+            padding: 13px 12px;
+
+            text-align: left;
+
+            border-bottom:
+                1px solid rgba(255, 255, 255, .08);
+
+            vertical-align: top;
+        }
+
+        .table-card th {
+            font-size: 12px;
+
+            text-transform: uppercase;
+
+            letter-spacing: .6px;
+
+            opacity: .65;
+        }
+
+        .table-card td {
+            font-size: 14px;
+        }
+
+        .table-card tbody tr {
+            transition:
+                background .2s ease;
+        }
+
+        .table-card tbody tr:hover {
+            background:
+                rgba(255, 255, 255, .035);
+        }
+
+        /* =====================================================
+           SECTION HEADING
+        ===================================================== */
+
+        .section-heading {
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            gap: 15px;
+
+            margin-bottom: 18px;
+        }
+
+        /* =====================================================
+           SMALL TEXT
+        ===================================================== */
+
+        .small-title {
+            font-size: 11px;
+
+            letter-spacing: 1.4px;
+
+            opacity: .55;
+
+            margin-bottom: 6px;
+        }
+
+        /* =====================================================
+           BUTTON
+        ===================================================== */
+
+        button {
+            cursor: pointer;
+        }
+
+        button:disabled {
+            opacity: .55;
+
+            cursor: not-allowed;
+        }
+
+        /* =====================================================
+           MOBILE
+        ===================================================== */
+
+        @media (max-width: 900px) {
+
+            .admin-tools {
+                grid-template-columns: 1fr;
+            }
+
+            .admin-stats {
+                grid-template-columns:
+                    repeat(3, 1fr);
+            }
+
+        }
+
+        @media (max-width: 650px) {
+
+            .admin-stats {
+                grid-template-columns:
+                    repeat(2, 1fr);
+            }
+
+            .section-heading {
+                align-items: flex-start;
+
+                flex-direction: column;
+            }
+
+            .csv-actions {
+                flex-direction: column;
+            }
+
+            .csv-actions .btn {
+                width: 100%;
+            }
+
+        }
+
+        @media (max-width: 430px) {
+
+            .admin-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-card strong {
+                font-size: 25px;
+            }
+
+            .upload-box {
+                padding: 18px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body class="dashboard-page">
+
+    <!-- =====================================================
+         BACKGROUND
+    ===================================================== -->
+
+    <div class="bg-orbit orbit-a"></div>
+    <div class="bg-orbit orbit-b"></div>
+
+    <!-- =====================================================
+         NAVIGATION
+    ===================================================== -->
+
+    <nav>
+
+        <b>
+            IT<span>ARENA</span>
+        </b>
+
+        <div>
+
+            <a href="dashboard.html">
+                Dashboard
+            </a>
+
+            <a href="leaderboard.html">
+                Leaderboard
+            </a>
+
+            <button
+                id="logoutBtn"
+                class="linkbtn"
+                type="button">
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </nav>
+
+    <!-- =====================================================
+         MAIN
+    ===================================================== -->
+
+    <main class="container admin-container">
+
+        <!-- =================================================
+             HEADER
+        ================================================= -->
+
+        <section class="dash-head">
+
+            <div class="badge">
+                ADMIN CONTROL ROOM
+            </div>
+
+            <h1>
+                Run the <span>arena.</span>
+            </h1>
+
+            <p>
+                Create, import, edit and manage quiz
+                questions, review attempts and manage
+                students.
+            </p>
+
+        </section>
+
+        <!-- =================================================
+             ADMIN MESSAGE
+        ================================================= -->
+
+        <div
+            id="adminMessage"
+            class="admin-message"
+            aria-live="polite">
+        </div>
+
+        <!-- =================================================
+             STATISTICS
+        ================================================= -->
+
+        <section class="admin-stats">
+
+            <div class="stat-card">
+
+                <span>
+                    TOTAL QUESTIONS
+                </span>
+
+                <strong id="totalQuestions">
+                    0
+                </strong>
+
+            </div>
+
+            <div class="stat-card">
+
+                <span>
+                    STUDENTS
+                </span>
+
+                <strong id="totalStudents">
+                    0
+                </strong>
+
+            </div>
+
+            <div class="stat-card">
+
+                <span>
+                    COMPLETED ATTEMPTS
+                </span>
+
+                <strong id="totalAttempts">
+                    0
+                </strong>
+
+            </div>
+
+        </section>
+
+        <!-- =================================================
+             CREATE QUESTION + CSV IMPORT
+        ================================================= -->
+
+        <section class="admin-tools">
+
+            <!-- =============================================
+                 MANUAL QUESTION
+            ============================================== -->
+
+            <div class="panel">
+
+                <p class="small-title">
+                    QUESTION BANK
+                </p>
+
+                <h2>
+                    Create Question
+                </h2>
+
+                <p>
+                    Add one question manually to the
+                    question bank.
+                </p>
+
+                <form
+                    id="questionForm"
+                    class="admin-form">
+
+                    <!-- CATEGORY -->
+
+                    <label>
+
+                        Subject / Category
+
+                        <input
+                            id="category"
+                            type="text"
+                            required
+                            autocomplete="off"
+                            placeholder="Example: Python">
+
+                    </label>
+
+                    <!-- QUESTION -->
+
+                    <label>
+
+                        Question
+
+                        <textarea
+                            id="question"
+                            required
+                            rows="3"
+                            placeholder="Enter the question here...">
+                        </textarea>
+
+                    </label>
+
+                    <!-- OPTION A -->
+
+                    <label>
+
+                        Option A
+
+                        <input
+                            id="optionA"
+                            type="text"
+                            required
+                            placeholder="Enter option A">
+
+                    </label>
+
+                    <!-- OPTION B -->
+
+                    <label>
+
+                        Option B
+
+                        <input
+                            id="optionB"
+                            type="text"
+                            required
+                            placeholder="Enter option B">
+
+                    </label>
+
+                    <!-- OPTION C -->
+
+                    <label>
+
+                        Option C
+
+                        <input
+                            id="optionC"
+                            type="text"
+                            required
+                            placeholder="Enter option C">
+
+                    </label>
+
+                    <!-- OPTION D -->
+
+                    <label>
+
+                        Option D
+
+                        <input
+                            id="optionD"
+                            type="text"
+                            required
+                            placeholder="Enter option D">
+
+                    </label>
+
+                    <!-- CORRECT ANSWER -->
+
+                    <label>
+
+                        Correct Answer
+
+                        <select
+                            id="correctAnswer"
+                            required>
+
+                            <option value="A">
+                                A
+                            </option>
+
+                            <option value="B">
+                                B
+                            </option>
+
+                            <option value="C">
+                                C
+                            </option>
+
+                            <option value="D">
+                                D
+                            </option>
+
+                        </select>
+
+                    </label>
+
+                    <!-- CREATE -->
+
+                    <button
+                        class="btn primary"
+                        type="submit">
+
+                        Create Question
+
+                    </button>
+
+                </form>
+
+            </div>
+
+            <!-- =============================================
+                 CSV IMPORT
+            ============================================== -->
+
+            <div class="panel">
+
+                <p class="small-title">
+                    BULK QUESTION IMPORT
+                </p>
+
+                <h2>
+                    Import Questions from CSV
+                </h2>
+
+                <p>
+                    Upload multiple questions and options
+                    at the same time.
+                </p>
+
+                <!-- CSV FORMAT -->
+
+                <div
+                    style="
+                        margin-top:15px;
+                        padding:12px;
+                        border-radius:10px;
+                        background:rgba(255,255,255,.04);
+                        font-size:13px;
+                        line-height:1.6;
+                    ">
+
+                    <strong>
+                        CSV columns:
+                    </strong>
+
+                    <br>
+
+                    category,
+                    question,
+                    option_a,
+                    option_b,
+                    option_c,
+                    option_d,
+                    correct_answer
+
+                    <br><br>
+
+                    <strong>
+                        Correct answer:
+                    </strong>
+
+                    A, B, C or D
+
+                </div>
+
+                <!-- UPLOAD -->
+
+                <div class="upload-box">
+
+                    <label
+                        for="csvFile"
+                        style="
+                            display:block;
+                            font-weight:700;
+                            margin-bottom:8px;
+                        ">
+
+                        Select CSV File
+
+                    </label>
+
+                    <input
+                        type="file"
+                        id="csvFile"
+                        accept=".csv,text/csv">
+
+                    <!-- CSV BUTTONS -->
+
+                    <div class="csv-actions">
+
+                        <button
+                            type="button"
+                            id="downloadTemplate"
+                            class="btn ghost">
+
+                            Download Template
+
+                        </button>
+
+                        <button
+                            type="button"
+                            id="validateCsv"
+                            class="btn primary">
+
+                            Validate CSV
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <!-- SUMMARY -->
+
+                <div
+                    id="csvSummary"
+                    class="import-summary">
+                </div>
+
+                <!-- ERRORS -->
+
+                <div
+                    id="csvErrors"
+                    class="error-list"
+                    style="display:none">
+                </div>
+
+                <!-- PREVIEW -->
+
+                <div
+                    id="csvPreview"
+                    class="preview-wrapper">
+                </div>
+
+                <!-- IMPORT ACTIONS -->
+
+                <div
+                    id="csvImportActions"
+                    style="
+                        display:none;
+                        margin-top:15px;
+                    ">
+
+                    <button
+                        id="importCsv"
+                        type="button"
+                        class="btn primary">
+
+                        Import Valid Questions
+
+                    </button>
+
+                    <button
+                        id="cancelCsv"
+                        type="button"
+                        class="btn ghost">
+
+                        Cancel
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- =================================================
+             COMPLETED ATTEMPTS
+        ================================================= -->
+
+        <section class="panel">
+
+            <div class="section-heading">
+
+                <div>
+
+                    <p class="small-title">
+                        COMPLETED ATTEMPTS
+                    </p>
+
+                    <h2>
+                        Who Finished?
+                    </h2>
+
+                </div>
+
+                <button
+                    id="refreshResults"
+                    type="button"
+                    class="btn ghost small">
+
+                    Refresh
+
+                </button>
+
+            </div>
+
+            <div class="table-card">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Student
+                            </th>
+
+                            <th>
+                                Email
+                            </th>
+
+                            <th>
+                                Subject
+                            </th>
+
+                            <th>
+                                Score
+                            </th>
+
+                            <th>
+                                %
+                            </th>
+
+                            <th>
+                                Completed
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="resultsBody">
+
+                        <tr>
+
+                            <td colspan="6">
+                                Loading…
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+        <!-- =================================================
+             QUESTION BANK
+        ================================================= -->
+
+        <section class="panel">
+
+            <div class="section-heading">
+
+                <div>
+
+                    <p class="small-title">
+                        QUESTION BANK
+                    </p>
+
+                    <h2>
+                        Existing Questions
+                    </h2>
+
+                </div>
+
+            </div>
+
+            <!-- SEARCH / FILTER -->
+
+            <div class="question-tools">
+
+                <input
+                    id="questionSearch"
+                    type="search"
+                    placeholder="Search questions or categories...">
+
+                <select
+                    id="subjectFilter">
+
+                    <option value="">
+                        All Subjects
+                    </option>
+
+                </select>
+
+            </div>
+
+            <!-- QUESTION TABLE -->
+
+            <div class="table-card">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                ID
+                            </th>
+
+                            <th>
+                                Category
+                            </th>
+
+                            <th>
+                                Question
+                            </th>
+
+                            <th>
+                                Correct
+                            </th>
+
+                            <th>
+                                Action
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="questionsBody">
+
+                        <tr>
+
+                            <td colspan="5">
+                                Loading…
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+        <!-- =================================================
+             STUDENT MANAGEMENT
+        ================================================= -->
+
+        <section class="panel">
+
+            <div class="section-heading">
+
+                <div>
+
+                    <p class="small-title">
+                        STUDENT MANAGEMENT
+                    </p>
+
+                    <h2>
+                        Warnings & Blocks
+                    </h2>
+
+                    <p>
+                        Review student warning status and
+                        unblock students when necessary.
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="table-card">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Student
+                            </th>
+
+                            <th>
+                                Email
+                            </th>
+
+                            <th>
+                                Warnings
+                            </th>
+
+                            <th>
+                                Status
+                            </th>
+
+                            <th>
+                                Action
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="studentsBody">
+
+                        <tr>
+
+                            <td colspan="5">
+                                Loading…
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- =====================================================
+         SUPABASE
+    ===================================================== -->
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- YOUR SUPABASE CONFIG -->
+
+    <script src="js/supabase.js"></script>
+
+    <!-- YOUR ADMIN LOGIC -->
+
+    <script src="js/admin.js"></script>
+
+</body>
+
+</html>

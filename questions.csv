@@ -1,0 +1,8 @@
+subject,question,option_a,option_b,option_c,option_d,correct_answer
+Python,Which keyword is used to define a function?,function,def,fun,define,B
+Python,Which data type is immutable?,List,Dictionary,Tuple,Set,C
+Java,Which keyword is used for inheritance?,this,extends,implements,super,B
+JavaScript,Which keyword declares a constant?,var,let,const,static,C
+HTML,Which tag creates a hyperlink?,<p>,<a>,<div>,<link>,B
+CSS,Which property changes text color?,font,color,text-color,background,B
+DBMS,What does SQL stand for?,Structured Query Language,Simple Query Language,System Query Language,Sequential Query Language,A
