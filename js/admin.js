@@ -1,829 +1,2137 @@
-/* ============================================================
-   IT ARENA - ADMIN.JS
-   ============================================================ */
+You should not paste that code randomly. It needs to replace the part of your JavaScript that currently creates/loads the subject list.
 
-const {
-    createClient
-} = supabase;
+If your current code has something like:
 
-const quizSupabase = window.quizSupabase || createClient(
-    window.SUPABASE_URL,
-    window.SUPABASE_ANON_KEY
-);
+const subjects = [
+    "Python",
+    "Java",
+    "C++",
+    "DBMS",
+    "HTML",
+    "CSS",
+    "JavaScript",
+    "RPA"
+];
 
+or:
 
-/* ============================================================
-   DOM HELPERS
-   ============================================================ */
+const subjects = ["Python", "Java", "C++", "DBMS"];
 
-const $ = (id) => document.getElementById(id);
+then replace that subject-loading logic with a function like this:
 
+async function loadSubjects() {
+    const { data, error } = await quizSupabase
+        .from("questions")
+        .select("subject");
 
-/* ============================================================
-   ADMIN MESSAGE
-   ============================================================ */
-
-function showMessage(message, type = "success") {
-
-    const el = $("adminMessage");
-
-    if (!el) return;
-
-    el.textContent = message;
-    el.className = `admin-message ${type}`;
-
-    clearTimeout(window.__adminMessageTimer);
-
-    window.__adminMessageTimer = setTimeout(() => {
-
-        el.textContent = "";
-        el.className = "admin-message";
-
-    }, 5000);
-}
-
-
-/* ============================================================
-   CSV HELPER
-   ============================================================ */
-
-function escapeCSV(value) {
-
-    if (value === null || value === undefined) {
-        return "";
-    }
-
-    const text = String(value);
-
-    return `"${text.replace(/"/g, '""')}"`;
-}
-
-
-function downloadCSV(filename, rows) {
-
-    if (!rows || !rows.length) {
-
-        showMessage(
-            "No data available to download.",
-            "error"
-        );
-
+    if (error) {
+        console.error("Error loading subjects:", error);
         return;
     }
 
-    const headers = Object.keys(rows[0]);
+    const subjects = [...new Set(
+        data
+            .map(q => q.subject)
+            .filter(Boolean)
+    )];
 
-    const csv = [
-        headers.map(escapeCSV).join(","),
+    console.log("Available subjects:", subjects);
 
-        ...rows.map(row =>
-            headers
-                .map(header => escapeCSV(row[header]))
-                .join(",")
-        )
+    // Display subjects in your subject-selection container
+    const subjectContainer = document.getElementById("subjectContainer");
 
-    ].join("\r\n");
+    if (!subjectContainer) {
+        console.error("subjectContainer not found");
+        return;
+    }
 
-    const blob = new Blob(
-        ["\uFEFF" + csv],
-        {
-            type: "text/csv;charset=utf-8;"
-        }
-    );
+    subjectContainer.innerHTML = "";
 
-    const url = URL.createObjectURL(blob);
+    if (subjects.length === 0) {
+        subjectContainer.innerHTML = `
+            <p class="no-subjects">
+                No subjects are currently available.
+            </p>
+        `;
+        return;
+    }
 
-    const link = document.createElement("a");
+    subjects.forEach(subject => {
+        const button = document.createElement("button");
 
-    link.href = url;
-    link.download = filename;
+        button.className = "subject-btn";
+        button.textContent = subject;
 
-    document.body.appendChild(link);
+        button.addEventListener("click", () => {
+            // Use your existing quiz-start function here
+            startQuiz(subject);
+        });
 
-    link.click();
-
-    document.body.removeChild(link);
-
-    URL.revokeObjectURL(url);
+        subjectContainer.appendChild(button);
+    });
 }
 
+Then call it after Supabase has been initialized:
 
-/* ============================================================
-   DATE FORMAT
-   ============================================================ */
+document.addEventListener("DOMContentLoaded", () => {
+    loadSubjects();
+});
+But there is one important thing
 
-function formatDate(value) {
+I don't know the exact function/element names in your current project. For example, your project might use:
 
-    if (!value) return "";
+loadPrograms();
+
+or:
+
+displaySubjects();
+
+or:
+
+renderSubjects();
+
+and your HTML might use:
+
+<div id="subjects"></div>
+
+instead of:
+
+<div id="subjectContainer"></div>
+
+So if you paste this code directly, it could cause another error.
+
+Send me your current dashboard.js / dashboard.html (or the JavaScript file where the subjects are displayed). I'll point out the exact lines to replace and give you the corrected complete code so that:
+
+subjects with questions → shown
+subjects with no questions → hidden
+deleted all questions → no subjects shown
+selecting a subject → loads its questions correctly
+Pasted text(5).txt
+Document
+where can i replace that subject loading logic
+
+I checked the uploaded admin JavaScript.
+
+Important: don't replace anything in this admin.js
+
+The code you uploaded is your Admin Control Room. It already gets subjects dynamically from the questions table through populateCategoryFilter():
+
+function populateCategoryFilter() {
+    ...
+    const categories =
+        [...new Set(
+            allQuestions
+                .map(question =>
+                    String(question.category || "").trim()
+                )
+                .filter(Boolean)
+        )]
+        .sort(...);
+}
+
+So the code I previously gave you is not what you should replace here.
+
+Your problem is most likely in the student page JavaScript, where the subjects are displayed.
+
+Where you need to make the change
+
+Find the JavaScript file that controls this flow:
+
+dashboard.html
+       ↓
+Student selects subject
+       ↓
+Subject buttons/cards are displayed
+       ↓
+quiz.html
+
+Look in that file for code containing things like:
+
+const subjects = [...]
+
+or:
+
+["Python", "Java", "C++", ...]
+
+or:
+
+loadSubjects()
+
+or:
+
+renderSubjects()
+
+or:
+
+displaySubjects()
+Your admin.js is already correct
+
+When you delete questions from Admin, this part:
+
+const {
+    data,
+    error
+} = await quizSupabase
+    .from("questions")
+    .select("*")
+
+gets the remaining questions.
+
+Then:
+
+populateCategoryFilter();
+
+builds the Admin subject filter from the questions that actually exist.
+
+So if you deleted all questions, Admin should show:
+
+All Subjects
+
+with no question records.
+
+For the student side
+
+The student subject list should use:
+
+const { data, error } = await quizSupabase
+    .from("questions")
+    .select("category");
+
+Notice: Your database column is called category, not subject.
+
+This is important because your uploaded admin.js clearly inserts questions using:
+
+category: ...
+
+and retrieves:
+
+question.category
+
+Therefore, my earlier example using:
+
+.select("subject")
+
+would be wrong for your current database structure.
+
+Use:
+
+async function loadSubjects() {
+
+    const { data, error } = await quizSupabase
+        .from("questions")
+        .select("category");
+
+    if (error) {
+        console.error("Error loading subjects:", error);
+        return;
+    }
+
+    const subjects = [
+        ...new Set(
+            data
+                .map(q => String(q.category || "").trim())
+                .filter(Boolean)
+        )
+    ].sort();
+
+    console.log("Available subjects:", subjects);
+
+    // Use your existing subject-rendering code here
+}
+What I need from you
+
+Please upload your dashboard.js (or whichever JS file displays the subject cards/buttons).
+
+Then I can tell you exactly:
+
+Replace lines X–Y with this code
+
+and make it so that when you delete all questions for a subject:
+
+Python → has questions → Python appears
+Java → has questions → Java appears
+RPA → 0 questions → RPA disappears
+
+You do not need to change the admin.js you just uploaded.
+
+7feb7b0b-f307-47d8-bc3e-e7b8605073c2.html
+File
+2bb8d066-91e4-4cf4-9845-e8435b391f91.html
+File
+bcf5ec47-31b3-4f9d-871e-27d6823da303.html
+File
+check and analyse all programs and where can i replace loadsubject program
+
+Yes. I checked the three files you uploaded. The important finding is that your subject-selection code is not inside the uploaded dashboard.html; it loads a separate JavaScript file:
+
+<script src="js/dashboard.js"></script>
+
+Your dashboard.html contains the subject container:
+
+<div id="subjects" class="subject-grid"></div>
+
+and then loads dashboard.js.
+
+Your admin.html is also using category, not subject, for the question database. The manual question form has:
+
+<input id="category" type="text">
+
+and the question filter is subjectFilter.
+
+Exactly what you need to change
+1. Open this file
+js/dashboard.js
+
+This is the file you need to modify.
+
+Do not put the loadSubjects() code in:
+
+admin.html
+register.html
+admin.js
+
+Your dashboard.html explicitly loads:
+
+<script src="js/dashboard.js"></script>
+
+so dashboard.js is responsible for filling:
+
+<div id="subjects"></div>
+2. In dashboard.js, find the existing subject-loading code
+
+Look for something similar to:
+
+const subjects = [
+    "Python",
+    "Java",
+    "C++",
+    "DBMS",
+    "HTML",
+    "CSS",
+    "JavaScript",
+    "RPA"
+];
+
+or:
+
+const programs = [...]
+
+or:
+
+const subjects = [...]
+
+or code that contains:
+
+document.getElementById("subjects")
+3. Replace that part with this
+
+Because your database uses category, use this:
+
+async function loadSubjects() {
+    const { data, error } = await quizSupabase
+        .from("questions")
+        .select("category");
+
+    if (error) {
+        console.error("Error loading subjects:", error);
+        return;
+    }
+
+    const subjects = [
+        ...new Set(
+            data
+                .map(q => String(q.category || "").trim())
+                .filter(Boolean)
+        )
+    ].sort();
+
+    console.log("Available subjects:", subjects);
+
+    const container = document.getElementById("subjects");
+
+    if (!container) {
+        console.error("Subject container not found.");
+        return;
+    }
+
+    container.innerHTML = "";
+
+    if (subjects.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <h3>No subjects available</h3>
+                <p>The administrator has not added any quiz questions yet.</p>
+            </div>
+        `;
+        return;
+    }
+
+    subjects.forEach(subject => {
+        const button = document.createElement("button");
+
+        button.className = "subject-card";
+        button.textContent = subject;
+
+        button.addEventListener("click", () => {
+            localStorage.setItem("selectedSubject", subject);
+            window.location.href = "quiz.html";
+        });
+
+        container.appendChild(button);
+    });
+}
+
+Then at the bottom of dashboard.js, call:
+
+loadSubjects();
+But there is one important issue
+
+I don't want you to blindly replace the entire dashboard.js, because your existing project may already have:
+
+authentication checking
+admin link logic
+logout
+blocked-student checking
+selected subject handling
+quiz navigation
+
+The correct change is only the subject-loading section.
+
+Your current architecture is:
+dashboard.html
+       │
+       │
+       ├── supabase.js
+       │
+       ▼
+ dashboard.js
+       │
+       ▼
+ <div id="subjects">
+       │
+       ▼
+Supabase questions table
+       │
+       ▼
+category
+
+Your uploaded dashboard.html confirms this structure.
+
+After the fix
+
+Suppose your questions table contains:
+
+category	questions
+Python	40
+Java	30
+RPA	20
+DBMS	0
+
+The dashboard should show:
+
+Python
+Java
+RPA
+
+and DBMS should not appear.
+
+If you delete all questions:
+
+questions table
+      ↓
+0 rows
+      ↓
+No subjects available
+
+The old hard-coded subject names will no longer appear.
+
+One more correction from my previous answer
+
+I previously told you to use:
+
+.from("questions")
+.select("subject")
+
+For your project, that is incorrect.
+
+Your Admin page clearly uses the field:
+
+category
+
+for questions.
+
+So your student dashboard should query:
+
+.select("category")
+
+not:
+
+.select("subject")
+
+If you upload js/dashboard.js, I can identify the exact existing function and tell you precisely which lines to replace rather than making you guess.
+
+09379f09-ea3a-4f8f-b90a-eae28a834bdc.js
+JavaScript
+check and analyse this files and give replaceble  code for that file
+
+I analyzed the uploaded JavaScript. The file you provided is admin.js, and the important point is:
+
+You should NOT replace admin.js with a loadSubjects() function.
+
+Your admin.js already correctly loads question categories from the questions table:
+
+async function loadQuestions() {
+    ...
+    const { data, error } = await quizSupabase
+        .from("questions")
+        .select("*")
+        .order("category")
+        .order("id");
+    ...
+}
+
+Then it builds the Admin subject filter using:
+
+function populateCategoryFilter() {
+    ...
+    const categories = [...new Set(
+        allQuestions
+            .map(question => String(question.category || "").trim())
+            .filter(Boolean)
+    )];
+}
+
+So Admin is already using category correctly.
+
+The file you need to replace
+
+Your problem is on the student dashboard, not this admin.js.
+
+You need to modify:
+
+js/dashboard.js
+
+Specifically, replace the existing function that creates the subject cards/buttons.
+
+Use this complete function:
+
+async function loadSubjects() {
+    const container = document.getElementById("subjects");
+
+    if (!container) {
+        console.error("Subject container #subjects not found.");
+        return;
+    }
+
+    // Show loading message
+    container.innerHTML = `
+        <div class="subject-loading">
+            Loading subjects...
+        </div>
+    `;
 
     try {
+        const { data, error } = await quizSupabase
+            .from("questions")
+            .select("category");
 
-        return new Date(value).toLocaleString();
+        if (error) {
+            console.error("Error loading subjects:", error);
 
-    } catch {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <h3>Unable to load subjects</h3>
+                    <p>${escapeHtml(error.message)}</p>
+                </div>
+            `;
 
-        return value;
+            return;
+        }
+
+        // Get unique categories that actually have questions
+        const subjects = [
+            ...new Set(
+                (data || [])
+                    .map(question =>
+                        String(question.category || "").trim()
+                    )
+                    .filter(Boolean)
+            )
+        ].sort((a, b) => a.localeCompare(b));
+
+        console.log("Available subjects:", subjects);
+
+        // No questions available
+        if (subjects.length === 0) {
+
+            container.innerHTML = `
+                <div class="empty-state">
+                    <h3>No Subjects Available</h3>
+                    <p>
+                        No quiz questions have been added yet.
+                    </p>
+                </div>
+            `;
+
+            return;
+        }
+
+        // Clear loading message
+        container.innerHTML = "";
+
+        // Create subject cards
+        subjects.forEach(subject => {
+
+            const card = document.createElement("button");
+
+            card.type = "button";
+            card.className = "subject-card";
+
+            card.textContent = subject;
+
+            card.addEventListener("click", () => {
+
+                // Store selected category
+                localStorage.setItem(
+                    "selectedSubject",
+                    subject
+                );
+
+                // Open quiz
+                window.location.href = "quiz.html";
+            });
+
+            container.appendChild(card);
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Unexpected error while loading subjects:",
+            error
+        );
+
+        container.innerHTML = `
+            <div class="empty-state">
+                <h3>Something went wrong</h3>
+                <p>Please try again later.</p>
+            </div>
+        `;
     }
 }
 
+Then make sure dashboard.js calls it once after the page loads:
 
-/* ============================================================
-   AUTH CHECK
-   ============================================================ */
+document.addEventListener("DOMContentLoaded", () => {
+    loadSubjects();
+});
+One thing to check
 
-async function checkAdmin() {
+If your dashboard.js already has:
+
+function escapeHtml(...)
+
+keep it.
+
+If it doesn't have escapeHtml(), add this before loadSubjects():
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/[&<>'"]/g, character => {
+            const entities = {
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                "'": "&#39;",
+                '"': "&quot;"
+            };
+
+            return entities[character];
+        });
+}
+Your final behavior will be
+
+If your database contains:
+
+category    questions
+---------------------
+Python      40
+Java        30
+RPA         20
+DBMS         0
+
+Dashboard shows:
+
+Python
+Java
+RPA
+
+DBMS will not appear.
+
+If you delete all questions, the dashboard will show:
+
+No Subjects Available
+No quiz questions have been added yet.
+⚠️ Important
+
+Do not use:
+
+.from("questions")
+.select("subject")
+
+Your uploaded Admin code confirms that your actual question column is:
+
+category
+
+So the correct query for your project is:
+
+.from("questions")
+.select("category")
+
+If you upload dashboard.js itself, I can give you the exact complete replacement section from your actual file, including preserving your existing animations, profile, logout, warning/blocking checks, and quiz navigation.
+
+634530fd-75f3-412a-b62f-583b5f665d69.js
+JavaScript
+analyze this file and give exact complete replacement 
+
+Yes. I analyzed the exact dashboard.js file you uploaded. The reason your deleted subjects are still appearing is this line:
+
+const subjects=cats.length?cats:fallback;
+
+When there are zero questions, cats is empty, so your code uses the hard-coded fallback subjects.
+
+Exact complete replacement for your dashboard.js
+
+Replace the entire contents of your current dashboard.js with this:
+
+(async () => {
+    "use strict";
+
+    /* =====================================================
+       AUTHENTICATION
+       ===================================================== */
 
     const {
-        data: {
-            user
-        },
-        error
+        data: { user },
+        error: authError
     } = await quizSupabase.auth.getUser();
 
-    if (error || !user) {
-
+    if (authError || !user) {
         window.location.href = "login.html";
-
-        return null;
+        return;
     }
 
-    return user;
-}
 
-
-/* ============================================================
-   ADMIN PROFILE CHECK
-   ============================================================ */
-
-async function checkAdminRole(user) {
-
-    if (!user) return false;
+    /* =====================================================
+       LOAD USER PROFILE
+       ===================================================== */
 
     const {
-        data,
-        error
+        data: profile,
+        error: profileError
     } = await quizSupabase
         .from("profiles")
-        .select("role")
+        .select("role,blocked,warning_count,name")
         .eq("id", user.id)
         .maybeSingle();
 
-    if (error) {
-
-        console.error(
-            "Admin role error:",
-            error
-        );
-
-        showMessage(
-            "Unable to verify admin access.",
-            "error"
-        );
-
-        return false;
+    if (profileError || !profile) {
+        console.error("Profile loading error:", profileError);
+        window.location.href = "login.html";
+        return;
     }
 
-    if (!data || data.role !== "admin") {
 
-        showMessage(
-            "Admin access required.",
-            "error"
+    /* =====================================================
+       BLOCKED STUDENT CHECK
+       ===================================================== */
+
+    if (profile.blocked) {
+
+        alert(
+            "Your account is blocked after three quiz warnings. Please contact the admin."
         );
 
-        setTimeout(() => {
+        await quizSupabase.auth.signOut();
+
+        window.location.href = "login.html";
+
+        return;
+    }
+
+
+    /* =====================================================
+       ADMIN LINK
+       ===================================================== */
+
+    const adminLink =
+        document.getElementById("adminLink");
+
+    if (
+        adminLink &&
+        profile.role === "admin"
+    ) {
+        adminLink.classList.remove("hidden");
+    }
+
+
+    /* =====================================================
+       LOGOUT
+       ===================================================== */
+
+    const logoutButton =
+        document.getElementById("logout");
+
+    if (logoutButton) {
+
+        logoutButton.onclick = async () => {
+
+            const {
+                error
+            } = await quizSupabase.auth.signOut();
+
+            if (error) {
+                console.error(
+                    "Logout error:",
+                    error
+                );
+                return;
+            }
 
             window.location.href =
-                "dashboard.html";
-
-        }, 1200);
-
-        return false;
+                "login.html";
+        };
     }
 
-    return true;
-}
 
+    /* =====================================================
+       SUBJECT CONTAINER
+       ===================================================== */
 
-/* ============================================================
-   LOAD STATISTICS
-   ============================================================ */
+    const subjectsContainer =
+        document.getElementById("subjects");
 
-async function loadStatistics() {
-
-    try {
-
-        /* -------------------------------
-           QUESTIONS
-        ------------------------------- */
-
-        const {
-            count: questionCount,
-            error: questionError
-        } = await quizSupabase
-            .from("questions")
-            .select("*", {
-                count: "exact",
-                head: true
-            });
-
-        if (questionError) {
-            console.error(questionError);
-        }
-
-        if ($("totalQuestions")) {
-
-            $("totalQuestions").textContent =
-                questionCount || 0;
-        }
-
-
-        /* -------------------------------
-           STUDENTS
-        ------------------------------- */
-
-        const {
-            count: studentCount,
-            error: studentError
-        } = await quizSupabase
-            .from("profiles")
-            .select("*", {
-                count: "exact",
-                head: true
-            })
-            .eq("role", "student");
-
-        if (studentError) {
-            console.error(studentError);
-        }
-
-        if ($("totalStudents")) {
-
-            $("totalStudents").textContent =
-                studentCount || 0;
-        }
-
-
-        /* -------------------------------
-           COMPLETED ATTEMPTS
-        ------------------------------- */
-
-        const {
-            data: attempts,
-            error: attemptError
-        } = await quizSupabase.rpc(
-            "get_admin_results"
-        );
-
-        if (attemptError) {
-
-            console.error(
-                "Attempt statistics error:",
-                attemptError
-            );
-
-        } else {
-
-            if ($("totalAttempts")) {
-
-                $("totalAttempts").textContent =
-                    attempts?.length || 0;
-            }
-        }
-
-    } catch (error) {
+    if (!subjectsContainer) {
 
         console.error(
-            "Statistics error:",
-            error
+            "Subject container #subjects was not found."
         );
+
+        return;
     }
-}
 
 
-/* ============================================================
-   LOAD COMPLETED RESULTS
-   ============================================================ */
+    /* =====================================================
+       SHOW LOADING
+       ===================================================== */
 
-async function loadResults() {
-
-    const body = $("resultsBody");
-
-    if (!body) return;
-
-    body.innerHTML = `
-        <tr>
-            <td colspan="6">
-                Loading…
-            </td>
-        </tr>
+    subjectsContainer.innerHTML = `
+        <div class="subject-loading">
+            Loading available subjects...
+        </div>
     `;
+
+
+    /* =====================================================
+       LOAD SUBJECTS FROM QUESTIONS TABLE
+       
+       IMPORTANT:
+       Your questions table uses "category",
+       not "subject".
+       ===================================================== */
 
     const {
-        data,
-        error
-    } = await quizSupabase.rpc(
-        "get_admin_results"
-    );
+        data: questionData,
+        error: questionError
+    } = await quizSupabase
+        .from("questions")
+        .select("category");
 
-    if (error) {
+
+    /* =====================================================
+       DATABASE ERROR
+       ===================================================== */
+
+    if (questionError) {
 
         console.error(
-            "Results error:",
-            error
+            "Error loading subjects:",
+            questionError
         );
 
-        body.innerHTML = `
-            <tr>
-                <td colspan="6">
-                    Unable to load results.
-                </td>
-            </tr>
+        subjectsContainer.innerHTML = `
+            <div class="empty-state">
+                <h2>Unable to Load Subjects</h2>
+                <p>
+                    There was a problem loading the available
+                    quiz subjects. Please try again later.
+                </p>
+            </div>
         `;
 
         return;
     }
 
-    if (!data || data.length === 0) {
 
-        body.innerHTML = `
-            <tr>
-                <td colspan="6">
-                    No completed attempts found.
-                </td>
-            </tr>
-        `;
+    /* =====================================================
+       CREATE UNIQUE SUBJECT LIST
+       ===================================================== */
 
-        return;
-    }
-
-    body.innerHTML = "";
-
-    data.forEach(row => {
-
-        const tr = document.createElement("tr");
-
-        const score =
-            row.score ??
-            row.points ??
-            0;
-
-        const percentage =
-            row.percentage ??
-            row.percent ??
-            0;
-
-        const student =
-            row.student_name ??
-            row.name ??
-            row.full_name ??
-            "Unknown";
-
-        const email =
-            row.email ??
-            "";
-
-        const subject =
-            row.subject ??
-            row.category ??
-            "";
-
-        const completed =
-            row.completed_at ??
-            row.created_at ??
-            row.finished_at ??
-            "";
-
-        tr.innerHTML = `
-            <td>${escapeHTML(student)}</td>
-
-            <td>${escapeHTML(email)}</td>
-
-            <td>${escapeHTML(subject)}</td>
-
-            <td>${escapeHTML(score)}</td>
-
-            <td>${escapeHTML(percentage)}%</td>
-
-            <td>${escapeHTML(
-                formatDate(completed)
-            )}</td>
-        `;
-
-        body.appendChild(tr);
-
-    });
-}
-
-
-/* ============================================================
-   DOWNLOAD WHO FINISHED REPORT
-   ============================================================ */
-
-async function downloadWhoFinishedReport() {
-
-    showMessage(
-        "Preparing completed attempts report..."
+    const subjects = [
+        ...new Set(
+            (questionData || [])
+                .map(question =>
+                    String(
+                        question.category || ""
+                    ).trim()
+                )
+                .filter(Boolean)
+        )
+    ].sort((a, b) =>
+        a.localeCompare(b)
     );
 
-    try {
 
-        const {
-            data,
-            error
-        } = await quizSupabase.rpc(
-            "get_admin_results"
-        );
+    console.log(
+        "Available subjects:",
+        subjects
+    );
 
-        if (error) {
 
-            console.error(
-                "Who finished report error:",
-                error
-            );
+    /* =====================================================
+       NO QUESTIONS / NO SUBJECTS
+       
+       IMPORTANT:
+       There is NO fallback subject list here.
+       Therefore, if questions are deleted,
+       the subject will disappear.
+       ===================================================== */
 
-            showMessage(
-                "Unable to generate completed attempts report.",
-                "error"
-            );
+    if (subjects.length === 0) {
 
-            return;
-        }
+        subjectsContainer.innerHTML = `
+            <div class="empty-state">
+                <h2>No Subjects Available</h2>
+                <p>
+                    No quiz questions have been added yet.
+                </p>
+            </div>
+        `;
 
-        if (!data || data.length === 0) {
+        return;
+    }
 
-            showMessage(
-                "There are no completed attempts to export.",
-                "error"
-            );
 
-            return;
-        }
+    /* =====================================================
+       SUBJECT ICONS
+       ===================================================== */
 
-        const rows = data.map(row => {
+    const subjectIcons = [
+        "⌘",
+        "☕",
+        "⚙",
+        "JS",
+        "<>",
+        "SQL",
+        "DB",
+        "OS",
+        "NET",
+        "DS"
+    ];
 
-            const score =
-                row.score ??
-                row.points ??
-                0;
 
-            const percentage =
-                row.percentage ??
-                row.percent ??
-                0;
+    /* =====================================================
+       DISPLAY SUBJECTS
+       ===================================================== */
 
-            return {
+    subjectsContainer.innerHTML =
+        subjects
+            .map((subject, index) => {
 
-                Student:
-                    row.student_name ??
-                    row.name ??
-                    row.full_name ??
-                    "Unknown",
+                const icon =
+                    subjectIcons[
+                        index %
+                        subjectIcons.length
+                    ];
 
-                Email:
-                    row.email ??
-                    "",
 
-                Subject:
-                    row.subject ??
-                    row.category ??
-                    "",
+                return `
+                    <a
+                        class="subject-card"
+                        style="--delay:${index}"
+                        href="quiz.html?subject=${encodeURIComponent(subject)}"
+                    >
 
-                Score:
-                    score,
+                        <span class="number">
+                            ${String(index + 1).padStart(2, "0")}
+                        </span>
 
-                Percentage:
-                    percentage,
+                        <div class="subject-icon">
+                            ${icon}
+                        </div>
 
-                "Completed At":
-                    formatDate(
-                        row.completed_at ??
-                        row.created_at ??
-                        row.finished_at
-                    )
+                        <h2>
+                            ${escapeHtml(subject)}
+                        </h2>
+
+                        <p>
+                            Enter quiz →
+                        </p>
+
+                        <div class="mini-code">
+                            while(skill){ learn(); }
+                        </div>
+
+                    </a>
+                `;
+
+            })
+            .join("");
+
+
+})();
+
+
+/* =========================================================
+   HTML ESCAPE
+   Prevents category names from injecting HTML
+   ========================================================= */
+
+function escapeHtml(value) {
+
+    return String(value ?? "")
+        .replace(/[&<>'"]/g, character => {
+
+            const entities = {
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                "'": "&#39;",
+                '"': "&quot;"
             };
+
+            return entities[character];
+
         });
+}
+What I changed
 
-        downloadCSV(
-            "IT_Arena_Who_Finished_Report.csv",
-            rows
-        );
+Your original code had:
 
-        showMessage(
-            `${rows.length} completed attempt(s) exported successfully.`
-        );
+const fallback=[
+    'Python',
+    'Java',
+    'C++',
+    'JavaScript',
+    'HTML & CSS',
+    'SQL',
+    'DBMS',
+    'Operating Systems',
+    'Computer Networks',
+    'Data Structures'
+];
 
-    } catch (error) {
+const subjects=cats.length?cats:fallback;
 
-        console.error(error);
+That is exactly why the subjects remained after you deleted all questions.
 
-        showMessage(
-            "Failed to download completed attempts report.",
-            "error"
-        );
+I removed the fallback completely.
+
+Now the behavior is:
+
+questions table	Dashboard
+Python has questions	Python shown
+Java has questions	Java shown
+RPA has questions	RPA shown
+RPA has 0 questions	RPA hidden
+All questions deleted	No Subjects Available
+
+Also, I kept your existing:
+
+Supabase authentication
+blocked-user check
+admin link
+logout
+animated subject cards
+subject numbering
+subject icons
+quiz.html?subject=... navigation
+
+So you can replace the entire contents of your uploaded dashboard.js with the code above.
+
+One important note: after adding questions again through your Admin page, refresh the student dashboard. The newly available categories will then appear automatically.
+
+/* =========================================================
+IT ARENA - ADMIN CONTROL ROOM
+========================================================= */
+
+(async () => {
+
+"use strict";
+
+/* =====================================================
+   AUTHENTICATION / ADMIN CHECK
+   ===================================================== */
+
+const {
+    data: { user },
+    error: authError
+} = await quizSupabase.auth.getUser();
+
+if (authError || !user) {
+    window.location.href = "login.html";
+    return;
+}
+
+const {
+    data: profile,
+    error: profileError
+} = await quizSupabase
+    .from("profiles")
+    .select("role,name")
+    .eq("id", user.id)
+    .maybeSingle();
+
+if (
+    profileError ||
+    !profile ||
+    profile.role !== "admin"
+) {
+    window.location.href = "dashboard.html";
+    return;
+}
+
+
+/* =====================================================
+   ELEMENTS
+   ===================================================== */
+
+const qform = document.getElementById("questionForm");
+const qmsg = document.getElementById("adminMessage");
+
+const resultsBody =
+    document.getElementById("resultsBody");
+
+const questionsBody =
+    document.getElementById("questionsBody");
+
+const studentsBody =
+    document.getElementById("studentsBody");
+
+const refreshResults =
+    document.getElementById("refreshResults");
+
+const questionSearch =
+    document.getElementById("questionSearch");
+
+const subjectFilter =
+    document.getElementById("subjectFilter");
+
+const totalQuestions =
+    document.getElementById("totalQuestions");
+
+const totalStudents =
+    document.getElementById("totalStudents");
+
+const totalAttempts =
+    document.getElementById("totalAttempts");
+
+const csvFile =
+    document.getElementById("csvFile");
+
+const downloadTemplate =
+    document.getElementById("downloadTemplate");
+
+const validateCsv =
+    document.getElementById("validateCsv");
+
+const importCsv =
+    document.getElementById("importCsv");
+
+const cancelCsv =
+    document.getElementById("cancelCsv");
+
+const csvSummary =
+    document.getElementById("csvSummary");
+
+const csvErrors =
+    document.getElementById("csvErrors");
+
+const csvPreview =
+    document.getElementById("csvPreview");
+
+const csvImportActions =
+    document.getElementById("csvImportActions");
+
+
+/* =====================================================
+   GLOBAL DATA
+   ===================================================== */
+
+let allQuestions = [];
+
+let validatedCsvRows = [];
+
+let csvHasBeenValidated = false;
+
+
+/* =====================================================
+   MESSAGE HELPER
+   ===================================================== */
+
+function showMessage(message, type = "") {
+
+    if (!qmsg) return;
+
+    qmsg.textContent = message;
+
+    qmsg.className = "admin-message";
+
+    if (type) {
+        qmsg.classList.add(type);
     }
 }
 
 
-/* ============================================================
-   LOAD STUDENTS / WARNINGS / BLOCKS
-   ============================================================ */
+/* =====================================================
+   HTML ESCAPE
+   ===================================================== */
 
-async function loadStudents() {
+function escapeHtml(value) {
 
-    const body = $("studentsBody");
+    return String(value ?? "")
+        .replace(/[&<>'"]/g, character => {
 
-    if (!body) return;
+            const entities = {
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                "'": "&#39;",
+                '"': "&quot;"
+            };
 
-    body.innerHTML = `
-        <tr>
+            return entities[character];
+        });
+}
+
+
+/* =====================================================
+   CSV ESCAPE
+   ===================================================== */
+
+function csvEscape(value) {
+
+    const text = String(value ?? "");
+
+    if (
+        text.includes(",") ||
+        text.includes('"') ||
+        text.includes("\n") ||
+        text.includes("\r")
+    ) {
+        return `"${text.replace(/"/g, '""')}"`;
+    }
+
+    return text;
+}
+
+
+/* =====================================================
+   DOWNLOAD CSV TEMPLATE
+   ===================================================== */
+
+if (downloadTemplate) {
+
+    downloadTemplate.addEventListener("click", () => {
+
+        const headers = [
+            "category",
+            "question",
+            "option_a",
+            "option_b",
+            "option_c",
+            "option_d",
+            "correct_answer"
+        ];
+
+        const exampleRows = [
+
+            [
+                "Python",
+                "Which keyword is used to define a function in Python?",
+                "function",
+                "def",
+                "define",
+                "func",
+                "B"
+            ],
+
+            [
+                "HTML",
+                "Which tag is used to create a hyperlink?",
+                "<link>",
+                "<a>",
+                "<href>",
+                "<url>",
+                "B"
+            ]
+
+        ];
+
+        const csvContent = [
+            headers,
+            ...exampleRows
+        ]
+            .map(row =>
+                row.map(csvEscape).join(",")
+            )
+            .join("\r\n");
+
+
+        const blob = new Blob(
+            [csvContent],
+            {
+                type: "text/csv;charset=utf-8;"
+            }
+        );
+
+
+        const url =
+            URL.createObjectURL(blob);
+
+
+        const link =
+            document.createElement("a");
+
+
+        link.href = url;
+
+        link.download =
+            "it-arena-question-template.csv";
+
+
+        document.body.appendChild(link);
+
+        link.click();
+
+        document.body.removeChild(link);
+
+
+        setTimeout(() => {
+            URL.revokeObjectURL(url);
+        }, 100);
+
+
+        showMessage(
+            "CSV template downloaded successfully.",
+            "success"
+        );
+
+    });
+
+}
+
+
+/* =====================================================
+   MANUAL QUESTION CREATION
+   ===================================================== */
+
+if (qform) {
+
+    qform.addEventListener(
+        "submit",
+        async event => {
+
+            event.preventDefault();
+
+
+            showMessage(
+                "Creating question..."
+            );
+
+
+            const row = {
+
+                category:
+                    document
+                        .getElementById("category")
+                        ?.value
+                        .trim(),
+
+                question:
+                    document
+                        .getElementById("question")
+                        ?.value
+                        .trim(),
+
+                option_a:
+                    document
+                        .getElementById("optionA")
+                        ?.value
+                        .trim(),
+
+                option_b:
+                    document
+                        .getElementById("optionB")
+                        ?.value
+                        .trim(),
+
+                option_c:
+                    document
+                        .getElementById("optionC")
+                        ?.value
+                        .trim(),
+
+                option_d:
+                    document
+                        .getElementById("optionD")
+                        ?.value
+                        .trim(),
+
+                correct_answer:
+                    document
+                        .getElementById("correctAnswer")
+                        ?.value
+                        .trim()
+                        .toUpperCase()
+
+            };
+
+
+            /* Basic validation */
+
+            if (
+                !row.category ||
+                !row.question ||
+                !row.option_a ||
+                !row.option_b ||
+                !row.option_c ||
+                !row.option_d
+            ) {
+
+                showMessage(
+                    "Please fill in all question fields.",
+                    "error"
+                );
+
+                return;
+            }
+
+
+            if (
+                !["A", "B", "C", "D"]
+                    .includes(row.correct_answer)
+            ) {
+
+                showMessage(
+                    "Correct answer must be A, B, C or D.",
+                    "error"
+                );
+
+                return;
+            }
+
+
+            const {
+                error
+            } = await quizSupabase
+                .from("questions")
+                .insert(row);
+
+
+            if (error) {
+
+                showMessage(
+                    "Could not create question: " +
+                    error.message,
+                    "error"
+                );
+
+                return;
+            }
+
+
+            showMessage(
+                "Question created successfully.",
+                "success"
+            );
+
+
+            qform.reset();
+
+
+            await loadQuestions();
+
+        }
+    );
+
+}
+
+
+/* =====================================================
+   LOAD QUESTIONS
+   ===================================================== */
+
+async function loadQuestions() {
+
+    if (!questionsBody) return;
+
+
+    questionsBody.innerHTML =
+        `<tr>
             <td colspan="5">
-                Loading…
+                Loading...
             </td>
-        </tr>
-    `;
+        </tr>`;
+
 
     const {
         data,
         error
     } = await quizSupabase
-        .from("profiles")
-        .select(`
-            id,
-            full_name,
-            email,
-            warning_count,
-            blocked,
-            role
-        `)
-        .eq("role", "student")
-        .order(
-            "full_name",
-            {
-                ascending: true
-            }
-        );
+        .from("questions")
+        .select("*")
+        .order("category")
+        .order("id");
+
 
     if (error) {
 
-        console.error(
-            "Students error:",
-            error
-        );
-
-        body.innerHTML = `
-            <tr>
-                <td colspan="5">
-                    Unable to load students.
+        questionsBody.innerHTML =
+            `<tr>
+                <td colspan="5"
+                    class="error-text">
+                    ${escapeHtml(error.message)}
                 </td>
-            </tr>
-        `;
+            </tr>`;
 
         return;
     }
 
-    if (!data || data.length === 0) {
 
-        body.innerHTML = `
-            <tr>
-                <td colspan="5">
-                    No students found.
-                </td>
-            </tr>
-        `;
+    allQuestions =
+        Array.isArray(data)
+            ? data
+            : [];
 
-        return;
+
+    updateQuestionStats();
+
+    populateCategoryFilter();
+
+    renderQuestions();
+
+}
+
+
+/* =====================================================
+   QUESTION STATISTICS
+   ===================================================== */
+
+function updateQuestionStats() {
+
+    if (totalQuestions) {
+
+        totalQuestions.textContent =
+            allQuestions.length;
+
     }
 
-    body.innerHTML = "";
+}
 
-    data.forEach(student => {
 
-        const warnings =
-            Number(
-                student.warning_count || 0
+/* =====================================================
+   CATEGORY FILTER
+   ===================================================== */
+
+function populateCategoryFilter() {
+
+    if (!subjectFilter) return;
+
+
+    const currentValue =
+        subjectFilter.value;
+
+
+    const categories =
+        [...new Set(
+            allQuestions
+                .map(question =>
+                    String(
+                        question.category || ""
+                    ).trim()
+                )
+                .filter(Boolean)
+        )]
+            .sort(
+                (a, b) =>
+                    a.localeCompare(b)
             );
 
-        const blocked =
-            Boolean(student.blocked);
 
-        const tr =
-            document.createElement("tr");
+    subjectFilter.innerHTML =
+        `<option value="">
+            All Subjects
+        </option>`;
 
-        tr.innerHTML = `
 
-            <td>
-                ${escapeHTML(
-                    student.full_name ||
-                    "Unknown"
-                )}
-            </td>
+    categories.forEach(category => {
 
-            <td>
-                ${escapeHTML(
-                    student.email || ""
-                )}
-            </td>
+        const option =
+            document.createElement("option");
 
-            <td>
-                ${warnings}
-            </td>
+        option.value = category;
 
-            <td>
+        option.textContent = category;
 
-                <span class="status ${
-                    blocked
-                        ? "blocked"
-                        : "active"
-                }">
+        subjectFilter.appendChild(option);
 
-                    ${
-                        blocked
-                            ? "Blocked"
-                            : "Active"
-                    }
-
-                </span>
-
-            </td>
-
-            <td>
-
-                ${
-                    blocked
-
-                    ? `
-                        <button
-                            type="button"
-                            class="btn ghost small"
-                            data-unblock="${student.id}">
-                            Unblock
-                        </button>
-                    `
-
-                    : `
-                        <span
-                            style="opacity:.55">
-                            No action
-                        </span>
-                    `
-                }
-
-            </td>
-        `;
-
-        body.appendChild(tr);
     });
 
 
-    /* -------------------------------
-       UNBLOCK BUTTONS
-    ------------------------------- */
+    if (
+        categories.includes(currentValue)
+    ) {
 
-    body
-        .querySelectorAll(
-            "[data-unblock]"
-        )
+        subjectFilter.value =
+            currentValue;
+
+    }
+
+}
+
+
+/* =====================================================
+   RENDER QUESTIONS
+   ===================================================== */
+
+function renderQuestions() {
+
+    if (!questionsBody) return;
+
+
+    const searchText =
+        questionSearch
+            ?.value
+            ?.trim()
+            ?.toLowerCase() || "";
+
+
+    const selectedCategory =
+        subjectFilter
+            ?.value || "";
+
+
+    const filtered =
+        allQuestions.filter(question => {
+
+            const category =
+                String(
+                    question.category || ""
+                );
+
+
+            const questionText =
+                String(
+                    question.question || ""
+                );
+
+
+            const matchesSearch =
+                !searchText ||
+                category
+                    .toLowerCase()
+                    .includes(searchText) ||
+                questionText
+                    .toLowerCase()
+                    .includes(searchText);
+
+
+            const matchesCategory =
+                !selectedCategory ||
+                category === selectedCategory;
+
+
+            return (
+                matchesSearch &&
+                matchesCategory
+            );
+
+        });
+
+
+    if (!filtered.length) {
+
+        questionsBody.innerHTML =
+            `<tr>
+                <td colspan="5">
+                    No matching questions found.
+                </td>
+            </tr>`;
+
+        return;
+    }
+
+
+    questionsBody.innerHTML =
+        filtered.map(question => {
+
+            return `
+                <tr>
+
+                    <td>
+                        ${escapeHtml(question.id)}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(question.category)}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(question.question)}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(
+                            question.correct_answer
+                        )}
+                    </td>
+
+                    <td>
+
+                        <div class="action-buttons">
+
+                            <button
+                                type="button"
+                                class="btn danger small delete-question"
+                                data-id="${escapeHtml(question.id)}">
+
+                                Delete
+
+                            </button>
+
+                        </div>
+
+                    </td>
+
+                </tr>
+            `;
+
+        }).join("");
+
+
+    document
+        .querySelectorAll(".delete-question")
         .forEach(button => {
 
             button.addEventListener(
                 "click",
-                async () => {
-
-                    const id =
-                        button.dataset.unblock;
-
-                    await unblockStudent(id);
-                }
+                () =>
+                    deleteQuestion(
+                        button.dataset.id
+                    )
             );
 
         });
+
 }
 
 
-/* ============================================================
-   DOWNLOAD WARNINGS & BLOCKS REPORT
-   ============================================================ */
+/* =====================================================
+   DELETE QUESTION
+   ===================================================== */
 
-async function downloadWarningsBlocksReport() {
+async function deleteQuestion(id) {
 
-    showMessage(
-        "Preparing warnings & blocks report..."
-    );
+    if (!id) return;
 
-    try {
-
-        const {
-            data,
-            error
-        } = await quizSupabase
-            .from("profiles")
-            .select(`
-                id,
-                full_name,
-                email,
-                warning_count,
-                blocked,
-                role
-            `)
-            .eq("role", "student")
-            .order(
-                "full_name",
-                {
-                    ascending: true
-                }
-            );
-
-        if (error) {
-
-            console.error(
-                "Warnings report error:",
-                error
-            );
-
-            showMessage(
-                "Unable to generate warnings & blocks report.",
-                "error"
-            );
-
-            return;
-        }
-
-        if (!data || data.length === 0) {
-
-            showMessage(
-                "There are no students to export.",
-                "error"
-            );
-
-            return;
-        }
-
-        const rows = data.map(student => {
-
-            const warnings =
-                Number(
-                    student.warning_count || 0
-                );
-
-            const blocked =
-                Boolean(student.blocked);
-
-            return {
-
-                Student:
-                    student.full_name ||
-                    "Unknown",
-
-                Email:
-                    student.email ||
-                    "",
-
-                Warnings:
-                    warnings,
-
-                Status:
-                    blocked
-                        ? "Blocked"
-                        : "Active"
-            };
-
-        });
-
-        downloadCSV(
-            "IT_Arena_Warnings_Blocks_Report.csv",
-            rows
-        );
-
-        showMessage(
-            `${rows.length} student record(s) exported successfully.`
-        );
-
-    } catch (error) {
-
-        console.error(error);
-
-        showMessage(
-            "Failed to download warnings & blocks report.",
-            "error"
-        );
-    }
-}
-
-
-/* ============================================================
-   UNBLOCK STUDENT
-   ============================================================ */
-
-async function unblockStudent(studentId) {
-
-    if (!studentId) return;
 
     const confirmed =
         window.confirm(
-            "Are you sure you want to unblock this student?"
+            "Are you sure you want to delete this question?"
         );
 
+
     if (!confirmed) return;
+
+
+    showMessage(
+        "Deleting question..."
+    );
+
+
+    const {
+        error
+    } = await quizSupabase
+        .from("questions")
+        .delete()
+        .eq("id", id);
+
+
+    if (error) {
+
+        showMessage(
+            "Could not delete question: " +
+            error.message,
+            "error"
+        );
+
+        return;
+    }
+
+
+    showMessage(
+        "Question deleted successfully.",
+        "success"
+    );
+
+
+    await loadQuestions();
+
+}
+
+
+/* =====================================================
+   QUESTION SEARCH
+   ===================================================== */
+
+if (questionSearch) {
+
+    questionSearch.addEventListener(
+        "input",
+        renderQuestions
+    );
+
+}
+
+
+/* =====================================================
+   SUBJECT FILTER
+   ===================================================== */
+
+if (subjectFilter) {
+
+    subjectFilter.addEventListener(
+        "change",
+        renderQuestions
+    );
+
+}
+
+
+/* =====================================================
+   LOAD RESULTS
+   ===================================================== */
+
+async function loadResults() {
+
+    if (!resultsBody) return;
+
+
+    resultsBody.innerHTML =
+        `<tr>
+            <td colspan="6">
+                Loading...
+            </td>
+        </tr>`;
+
+
+    const {
+        data,
+        error
+    } = await quizSupabase
+        .rpc("get_admin_results");
+
+
+    if (error) {
+
+        resultsBody.innerHTML =
+            `<tr>
+                <td colspan="6"
+                    class="error-text">
+                    ${escapeHtml(error.message)}
+                </td>
+            </tr>`;
+
+        return;
+    }
+
+
+    if (!data?.length) {
+
+        resultsBody.innerHTML =
+            `<tr>
+                <td colspan="6">
+                    No completed quizzes yet.
+                </td>
+            </tr>`;
+
+
+        if (totalAttempts) {
+            totalAttempts.textContent = "0";
+        }
+
+        return;
+    }
+
+
+    if (totalAttempts) {
+
+        totalAttempts.textContent =
+            data.length;
+
+    }
+
+
+    resultsBody.innerHTML =
+        data.map(result => {
+
+            const score =
+                Number(result.score) || 0;
+
+            const total =
+                Number(result.total_questions) || 0;
+
+            const percentage =
+                Number(result.percentage) || 0;
+
+
+            return `
+                <tr>
+
+                    <td>
+                        ${escapeHtml(
+                            result.student_name ||
+                            "Student"
+                        )}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(
+                            result.email || ""
+                        )}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(
+                            result.subject || ""
+                        )}
+                    </td>
+
+                    <td>
+                        ${score}/${total}
+                    </td>
+
+                    <td>
+                        ${percentage}%
+                    </td>
+
+                    <td>
+                        ${
+                            result.completed_at
+                                ? escapeHtml(
+                                    new Date(
+                                        result.completed_at
+                                    ).toLocaleString()
+                                )
+                                : "—"
+                        }
+                    </td>
+
+                </tr>
+            `;
+
+        }).join("");
+
+}
+
+
+/* =====================================================
+   LOAD STUDENTS
+   ===================================================== */
+
+async function loadStudents() {
+
+    if (!studentsBody) return;
+
+
+    studentsBody.innerHTML =
+        `<tr>
+            <td colspan="5">
+                Loading...
+            </td>
+        </tr>`;
+
+
+    const {
+        data,
+        error
+    } = await quizSupabase
+        .from("profiles")
+        .select(
+            "id,name,email,warning_count,blocked"
+        )
+        .eq("role", "student")
+        .order("name");
+
+
+    if (error) {
+
+        studentsBody.innerHTML =
+            `<tr>
+                <td colspan="5"
+                    class="error-text">
+                    ${escapeHtml(error.message)}
+                </td>
+            </tr>`;
+
+        return;
+    }
+
+
+    if (!data?.length) {
+
+        studentsBody.innerHTML =
+            `<tr>
+                <td colspan="5">
+                    No students yet.
+                </td>
+            </tr>`;
+
+
+        if (totalStudents) {
+            totalStudents.textContent = "0";
+        }
+
+        return;
+    }
+
+
+    if (totalStudents) {
+
+        totalStudents.textContent =
+            data.length;
+
+    }
+
+
+    studentsBody.innerHTML =
+        data.map(student => {
+
+            const warningCount =
+                Number(
+                    student.warning_count
+                ) || 0;
+
+
+            return `
+                <tr>
+
+                    <td>
+                        ${escapeHtml(
+                            student.name ||
+                            "Student"
+                        )}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(
+                            student.email || ""
+                        )}
+                    </td>
+
+                    <td>
+                        ${warningCount}/3
+                    </td>
+
+                    <td>
+
+                        ${
+                            student.blocked
+
+                                ? `
+                                    <span
+                                        class="status blocked">
+                                        Blocked
+                                    </span>
+                                  `
+
+                                : `
+                                    <span
+                                        class="status active">
+                                        Active
+                                    </span>
+                                  `
+                        }
+
+                    </td>
+
+                    <td>
+
+                        ${
+                            student.blocked
+
+                                ? `
+                                    <button
+                                        type="button"
+                                        class="btn small unblock"
+                                        data-id="${escapeHtml(student.id)}">
+
+                                        Unblock
+
+                                    </button>
+                                  `
+
+                                : "—"
+                        }
+
+                    </td>
+
+                </tr>
+            `;
+
+        }).join("");
+
+
+    document
+        .querySelectorAll(".unblock")
+        .forEach(button => {
+
+            button.addEventListener(
+                "click",
+                () =>
+                    unblockStudent(
+                        button.dataset.id
+                    )
+            );
+
+        });
+
+}
+
+
+/* =====================================================
+   UNBLOCK STUDENT
+   ===================================================== */
+
+async function unblockStudent(id) {
+
+    if (!id) return;
+
+
+    const confirmed =
+        window.confirm(
+            "Unblock this student and reset their warnings?"
+        );
+
+
+    if (!confirmed) return;
+
+
+    showMessage(
+        "Unblocking student..."
+    );
+
 
     const {
         error
@@ -833,440 +2141,36 @@ async function unblockStudent(studentId) {
             blocked: false,
             warning_count: 0
         })
-        .eq(
-            "id",
-            studentId
-        );
-
-    if (error) {
-
-        console.error(
-            "Unblock error:",
-            error
-        );
-
-        showMessage(
-            "Unable to unblock student.",
-            "error"
-        );
-
-        return;
-    }
-
-    showMessage(
-        "Student unblocked successfully."
-    );
-
-    await loadStudents();
-    await loadStatistics();
-}
-
-
-/* ============================================================
-   LOAD QUESTIONS
-   ============================================================ */
-
-let allQuestions = [];
-
-
-async function loadQuestions() {
-
-    const body = $("questionsBody");
-
-    if (!body) return;
-
-    body.innerHTML = `
-        <tr>
-            <td colspan="5">
-                Loading…
-            </td>
-        </tr>
-    `;
-
-    const {
-        data,
-        error
-    } = await quizSupabase
-        .from("questions")
-        .select(`
-            id,
-            category,
-            question,
-            option_a,
-            option_b,
-            option_c,
-            option_d,
-            correct_answer
-        `)
-        .order(
-            "id",
-            {
-                ascending: false
-            }
-        );
-
-    if (error) {
-
-        console.error(
-            "Questions error:",
-            error
-        );
-
-        body.innerHTML = `
-            <tr>
-                <td colspan="5">
-                    Unable to load questions.
-                </td>
-            </tr>
-        `;
-
-        return;
-    }
-
-    allQuestions = data || [];
-
-    populateSubjectFilter();
-
-    renderQuestions();
-}
-
-
-/* ============================================================
-   SUBJECT FILTER
-   ============================================================ */
-
-function populateSubjectFilter() {
-
-    const select =
-        $("subjectFilter");
-
-    if (!select) return;
-
-    const current =
-        select.value;
-
-    const subjects = [
-        ...new Set(
-            allQuestions
-                .map(q =>
-                    q.category
-                )
-                .filter(Boolean)
-        )
-    ].sort();
-
-    select.innerHTML = `
-        <option value="">
-            All Subjects
-        </option>
-    `;
-
-    subjects.forEach(subject => {
-
-        const option =
-            document.createElement("option");
-
-        option.value = subject;
-        option.textContent = subject;
-
-        select.appendChild(option);
-    });
-
-    if (
-        subjects.includes(current)
-    ) {
-
-        select.value = current;
-    }
-}
-
-
-/* ============================================================
-   RENDER QUESTIONS
-   ============================================================ */
-
-function renderQuestions() {
-
-    const body =
-        $("questionsBody");
-
-    if (!body) return;
-
-    const search =
-        (
-            $("questionSearch")?.value ||
-            ""
-        )
-        .trim()
-        .toLowerCase();
-
-    const subject =
-        $("subjectFilter")?.value ||
-        "";
-
-    const filtered =
-        allQuestions.filter(q => {
-
-            const matchesSearch =
-                !search ||
-                String(
-                    q.question || ""
-                )
-                    .toLowerCase()
-                    .includes(search) ||
-                String(
-                    q.category || ""
-                )
-                    .toLowerCase()
-                    .includes(search);
-
-            const matchesSubject =
-                !subject ||
-                q.category === subject;
-
-            return (
-                matchesSearch &&
-                matchesSubject
-            );
-        });
-
-    if (!filtered.length) {
-
-        body.innerHTML = `
-            <tr>
-                <td colspan="5">
-                    No matching questions found.
-                </td>
-            </tr>
-        `;
-
-        return;
-    }
-
-    body.innerHTML = "";
-
-    filtered.forEach(q => {
-
-        const tr =
-            document.createElement("tr");
-
-        tr.innerHTML = `
-
-            <td>
-                ${escapeHTML(q.id)}
-            </td>
-
-            <td>
-                ${escapeHTML(
-                    q.category || ""
-                )}
-            </td>
-
-            <td>
-                ${escapeHTML(
-                    q.question || ""
-                )}
-            </td>
-
-            <td>
-                <strong>
-                    ${escapeHTML(
-                        q.correct_answer || ""
-                    )}
-                </strong>
-            </td>
-
-            <td>
-
-                <div class="action-buttons">
-
-                    <button
-                        type="button"
-                        class="btn danger small"
-                        data-delete-question="${q.id}">
-
-                        Delete
-
-                    </button>
-
-                </div>
-
-            </td>
-        `;
-
-        body.appendChild(tr);
-    });
-
-
-    body
-        .querySelectorAll(
-            "[data-delete-question]"
-        )
-        .forEach(button => {
-
-            button.addEventListener(
-                "click",
-                async () => {
-
-                    const id =
-                        button.dataset
-                            .deleteQuestion;
-
-                    await deleteQuestion(id);
-                }
-            );
-
-        });
-}
-
-
-/* ============================================================
-   DELETE QUESTION
-   ============================================================ */
-
-async function deleteQuestion(id) {
-
-    if (!id) return;
-
-    const confirmed =
-        window.confirm(
-            "Delete this question?"
-        );
-
-    if (!confirmed) return;
-
-    const {
-        error
-    } = await quizSupabase
-        .from("questions")
-        .delete()
         .eq("id", id);
 
-    if (error) {
-
-        console.error(
-            "Delete question error:",
-            error
-        );
-
-        showMessage(
-            "Unable to delete question.",
-            "error"
-        );
-
-        return;
-    }
-
-    showMessage(
-        "Question deleted successfully."
-    );
-
-    await loadQuestions();
-    await loadStatistics();
-}
-
-
-/* ============================================================
-   CREATE QUESTION
-   ============================================================ */
-
-async function createQuestion(event) {
-
-    event.preventDefault();
-
-    const category =
-        $("category")?.value.trim();
-
-    const question =
-        $("question")?.value.trim();
-
-    const optionA =
-        $("optionA")?.value.trim();
-
-    const optionB =
-        $("optionB")?.value.trim();
-
-    const optionC =
-        $("optionC")?.value.trim();
-
-    const optionD =
-        $("optionD")?.value.trim();
-
-    const correctAnswer =
-        $("correctAnswer")?.value;
-
-    if (
-        !category ||
-        !question ||
-        !optionA ||
-        !optionB ||
-        !optionC ||
-        !optionD ||
-        !correctAnswer
-    ) {
-
-        showMessage(
-            "Please fill in all question fields.",
-            "error"
-        );
-
-        return;
-    }
-
-    const button =
-        event.submitter;
-
-    if (button) {
-        button.disabled = true;
-    }
-
-    const {
-        error
-    } = await quizSupabase
-        .from("questions")
-        .insert({
-            category,
-            question,
-            option_a: optionA,
-            option_b: optionB,
-            option_c: optionC,
-            option_d: optionD,
-            correct_answer: correctAnswer
-        });
-
-    if (button) {
-        button.disabled = false;
-    }
 
     if (error) {
 
-        console.error(
-            "Create question error:",
-            error
-        );
-
         showMessage(
-            "Unable to create question.",
+            "Could not unblock student: " +
+            error.message,
             "error"
         );
 
         return;
     }
 
+
     showMessage(
-        "Question created successfully."
+        "Student unblocked successfully.",
+        "success"
     );
 
-    $("questionForm").reset();
 
-    await loadQuestions();
-    await loadStatistics();
+    await loadStudents();
+
 }
 
 
-/* ============================================================
+/* =====================================================
    CSV PARSER
-   ============================================================ */
+   Handles commas inside quoted questions
+   ===================================================== */
 
 function parseCSV(text) {
 
@@ -1274,9 +2178,10 @@ function parseCSV(text) {
 
     let row = [];
 
-    let cell = "";
+    let value = "";
 
     let insideQuotes = false;
+
 
     for (
         let i = 0;
@@ -1284,104 +2189,235 @@ function parseCSV(text) {
         i++
     ) {
 
-        const char =
-            text[i];
+        const character = text[i];
 
-        const next =
+        const nextCharacter =
             text[i + 1];
 
+
         if (
-            char === '"' &&
+            character === '"' &&
             insideQuotes &&
-            next === '"'
+            nextCharacter === '"'
         ) {
 
-            cell += '"';
+            value += '"';
 
             i++;
 
             continue;
+
         }
 
-        if (char === '"') {
+
+        if (character === '"') {
 
             insideQuotes =
                 !insideQuotes;
 
             continue;
+
         }
 
+
         if (
-            char === "," &&
+            character === "," &&
             !insideQuotes
         ) {
 
-            row.push(cell);
+            row.push(value);
 
-            cell = "";
+            value = "";
 
             continue;
+
         }
 
+
         if (
-            (char === "\n" ||
-                char === "\r") &&
+            (
+                character === "\n" ||
+                character === "\r"
+            ) &&
             !insideQuotes
         ) {
 
             if (
-                char === "\r" &&
-                next === "\n"
+                character === "\r" &&
+                nextCharacter === "\n"
             ) {
+
                 i++;
+
             }
 
-            row.push(cell);
 
-            cell = "";
+            row.push(value);
+
+            value = "";
+
 
             if (
                 row.some(
-                    value =>
-                        value.trim() !== ""
+                    cell =>
+                        String(cell)
+                            .trim() !== ""
                 )
             ) {
 
                 rows.push(row);
+
             }
+
 
             row = [];
 
             continue;
+
         }
 
-        cell += char;
+
+        value += character;
+
     }
 
-    row.push(cell);
 
     if (
-        row.some(
-            value =>
-                value.trim() !== ""
-        )
+        value !== "" ||
+        row.length > 0
     ) {
 
-        rows.push(row);
+        row.push(value);
+
+        if (
+            row.some(
+                cell =>
+                    String(cell)
+                        .trim() !== ""
+            )
+        ) {
+
+            rows.push(row);
+
+        }
+
     }
 
+
     return rows;
+
 }
 
 
-/* ============================================================
-   CSV VALIDATION
-   ============================================================ */
+/* =====================================================
+   NORMALIZE CSV HEADER
+   ===================================================== */
 
-let validatedCSVRows = [];
+function normalizeHeader(header) {
+
+    return String(header ?? "")
+        .replace(/^\uFEFF/, "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "_");
+
+}
 
 
-function validateCSVData(rows) {
+/* =====================================================
+   VALIDATE CSV
+   ===================================================== */
+
+async function validateCSVFile() {
+
+    if (!csvFile?.files?.length) {
+
+        showMessage(
+            "Please select a CSV file first.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    const file =
+        csvFile.files[0];
+
+
+    if (
+        !file.name
+            .toLowerCase()
+            .endsWith(".csv")
+    ) {
+
+        showMessage(
+            "Please select a valid CSV file.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    showMessage(
+        "Reading and validating CSV..."
+    );
+
+
+    let text;
+
+
+    try {
+
+        text =
+            await file.text();
+
+    } catch (error) {
+
+        showMessage(
+            "Could not read CSV file.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    const parsedRows =
+        parseCSV(text);
+
+
+    if (!parsedRows.length) {
+
+        showMessage(
+            "The CSV file is empty.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    /* Remove BOM */
+
+    parsedRows[0][0] =
+        String(
+            parsedRows[0][0] || ""
+        ).replace(
+            /^\uFEFF/,
+            ""
+        );
+
+
+    const headers =
+        parsedRows[0]
+            .map(normalizeHeader);
+
 
     const requiredHeaders = [
         "category",
@@ -1393,307 +2429,497 @@ function validateCSVData(rows) {
         "correct_answer"
     ];
 
+
+    const missingHeaders =
+        requiredHeaders.filter(
+            header =>
+                !headers.includes(header)
+        );
+
+
+    if (missingHeaders.length) {
+
+        showMessage(
+            "CSV is missing required columns: " +
+            missingHeaders.join(", "),
+            "error"
+        );
+
+
+        showCsvErrors([
+            "Missing columns: " +
+            missingHeaders.join(", ")
+        ]);
+
+
+        return;
+
+    }
+
+
+    const columnIndexes = {};
+
+
+    requiredHeaders.forEach(header => {
+
+        columnIndexes[header] =
+            headers.indexOf(header);
+
+    });
+
+
     const errors = [];
 
     const validRows = [];
 
-    if (!rows.length) {
-
-        errors.push(
-            "CSV file is empty."
-        );
-
-        return {
-            validRows,
-            errors
-        };
-    }
-
-    const headers =
-        rows[0].map(
-            h =>
-                h
-                    .trim()
-                    .toLowerCase()
-        );
-
-    requiredHeaders.forEach(header => {
-
-        if (
-            !headers.includes(header)
-        ) {
-
-            errors.push(
-                `Missing column: ${header}`
-            );
-        }
-
-    });
-
-    if (errors.length) {
-
-        return {
-            validRows,
-            errors
-        };
-    }
-
-    const index = {};
-
-    headers.forEach(
-        (header, i) => {
-            index[header] = i;
-        }
-    );
+    const duplicateKeys =
+        new Set();
 
 
     for (
-        let i = 1;
-        i < rows.length;
-        i++
+        let index = 1;
+        index < parsedRows.length;
+        index++
     ) {
 
-        const raw =
-            rows[i];
+        const csvRow =
+            parsedRows[index];
+
 
         const rowNumber =
-            i + 1;
+            index + 1;
 
-        const record = {
+
+        const row = {
 
             category:
-                (
-                    raw[index.category] ||
-                    ""
+                String(
+                    csvRow[
+                        columnIndexes.category
+                    ] || ""
                 ).trim(),
 
             question:
-                (
-                    raw[index.question] ||
-                    ""
+                String(
+                    csvRow[
+                        columnIndexes.question
+                    ] || ""
                 ).trim(),
 
             option_a:
-                (
-                    raw[index.option_a] ||
-                    ""
+                String(
+                    csvRow[
+                        columnIndexes.option_a
+                    ] || ""
                 ).trim(),
 
             option_b:
-                (
-                    raw[index.option_b] ||
-                    ""
+                String(
+                    csvRow[
+                        columnIndexes.option_b
+                    ] || ""
                 ).trim(),
 
             option_c:
-                (
-                    raw[index.option_c] ||
-                    ""
+                String(
+                    csvRow[
+                        columnIndexes.option_c
+                    ] || ""
                 ).trim(),
 
             option_d:
-                (
-                    raw[index.option_d] ||
-                    ""
+                String(
+                    csvRow[
+                        columnIndexes.option_d
+                    ] || ""
                 ).trim(),
 
             correct_answer:
-                (
-                    raw[index.correct_answer] ||
-                    ""
+                String(
+                    csvRow[
+                        columnIndexes.correct_answer
+                    ] || ""
                 )
-                .trim()
-                .toUpperCase()
+                    .trim()
+                    .toUpperCase()
+
         };
+
+
+        /* Ignore completely empty rows */
+
+        if (
+            !Object.values(row)
+                .some(value => value !== "")
+        ) {
+
+            continue;
+
+        }
 
 
         const rowErrors = [];
 
-        if (!record.category) {
+
+        /* Required values */
+
+        if (!row.category) {
 
             rowErrors.push(
                 "Category is empty"
             );
+
         }
 
-        if (!record.question) {
+
+        if (!row.question) {
 
             rowErrors.push(
                 "Question is empty"
             );
+
         }
 
-        if (!record.option_a) {
+
+        if (!row.option_a) {
 
             rowErrors.push(
                 "Option A is empty"
             );
+
         }
 
-        if (!record.option_b) {
+
+        if (!row.option_b) {
 
             rowErrors.push(
                 "Option B is empty"
             );
+
         }
 
-        if (!record.option_c) {
+
+        if (!row.option_c) {
 
             rowErrors.push(
                 "Option C is empty"
             );
+
         }
 
-        if (!record.option_d) {
+
+        if (!row.option_d) {
 
             rowErrors.push(
                 "Option D is empty"
             );
+
         }
+
+
+        /* Correct answer */
 
         if (
             !["A", "B", "C", "D"]
                 .includes(
-                    record.correct_answer
+                    row.correct_answer
                 )
         ) {
 
             rowErrors.push(
                 "Correct answer must be A, B, C or D"
             );
+
         }
+
+
+        /* Duplicate inside CSV */
+
+        const duplicateKey =
+            [
+                row.category,
+                row.question
+            ]
+                .join("||")
+                .toLowerCase();
+
+
+        if (
+            duplicateKeys.has(
+                duplicateKey
+            )
+        ) {
+
+            rowErrors.push(
+                "Duplicate question in CSV"
+            );
+
+        }
+
+
+        duplicateKeys.add(
+            duplicateKey
+        );
+
+
+        /* Check existing questions */
+
+        const existingQuestion =
+            allQuestions.some(existing => {
+
+                return (
+                    String(
+                        existing.category || ""
+                    )
+                        .trim()
+                        .toLowerCase() ===
+                    row.category.toLowerCase()
+
+                    &&
+
+                    String(
+                        existing.question || ""
+                    )
+                        .trim()
+                        .toLowerCase() ===
+                    row.question.toLowerCase()
+                );
+
+            });
+
+
+        if (existingQuestion) {
+
+            rowErrors.push(
+                "Question already exists in question bank"
+            );
+
+        }
+
 
         if (rowErrors.length) {
 
-            errors.push(
-                `Row ${rowNumber}: ${rowErrors.join(", ")}`
-            );
-
-            validRows.push({
-                ...record,
-                __valid: false,
-                __row: rowNumber,
-                __errors: rowErrors
+            errors.push({
+                rowNumber,
+                errors: rowErrors,
+                row
             });
 
         } else {
 
-            validRows.push({
-                ...record,
-                __valid: true,
-                __row: rowNumber,
-                __errors: []
-            });
+            validRows.push(row);
+
         }
+
     }
 
-    return {
+
+    validatedCsvRows =
+        validRows;
+
+    csvHasBeenValidated = true;
+
+
+    renderCsvSummary(
+        parsedRows.length - 1,
+        validRows.length,
+        errors.length
+    );
+
+
+    renderCsvErrors(errors);
+
+
+    renderCsvPreview(
         validRows,
         errors
-    };
+    );
+
+
+    if (
+        validRows.length > 0
+    ) {
+
+        if (csvImportActions) {
+
+            csvImportActions.style.display =
+                "flex";
+
+        }
+
+        showMessage(
+            `${validRows.length} valid question(s) ready to import.`,
+            "success"
+        );
+
+    } else {
+
+        if (csvImportActions) {
+
+            csvImportActions.style.display =
+                "none";
+
+        }
+
+        showMessage(
+            "No valid questions found in CSV.",
+            "error"
+        );
+
+    }
+
 }
 
 
-/* ============================================================
-   SHOW CSV SUMMARY
-   ============================================================ */
+/* =====================================================
+   CSV SUMMARY
+   ===================================================== */
 
-function renderCSVSummary(rows) {
+function renderCsvSummary(
+    total,
+    valid,
+    invalid
+) {
 
-    const summary =
-        $("csvSummary");
+    if (!csvSummary) return;
 
-    if (!summary) return;
 
-    const total =
-        rows.length;
-
-    const valid =
-        rows.filter(
-            row => row.__valid
-        ).length;
-
-    const invalid =
-        total - valid;
-
-    summary.innerHTML = `
+    csvSummary.innerHTML = `
 
         <div class="summary-item">
-            <span>TOTAL</span>
-            <strong>${total}</strong>
+
+            <span>
+                TOTAL ROWS
+            </span>
+
+            <strong>
+                ${total}
+            </strong>
+
         </div>
 
-        <div class="summary-item">
-            <span>VALID</span>
-            <strong>${valid}</strong>
-        </div>
 
         <div class="summary-item">
-            <span>INVALID</span>
-            <strong>${invalid}</strong>
+
+            <span>
+                VALID
+            </span>
+
+            <strong>
+                ${valid}
+            </strong>
+
+        </div>
+
+
+        <div class="summary-item">
+
+            <span>
+                INVALID
+            </span>
+
+            <strong>
+                ${invalid}
+            </strong>
+
         </div>
 
     `;
+
 }
 
 
-/* ============================================================
-   SHOW CSV ERRORS
-   ============================================================ */
+/* =====================================================
+   CSV ERRORS
+   ===================================================== */
 
-function renderCSVErrors(errors) {
+function renderCsvErrors(errors) {
 
-    const box =
-        $("csvErrors");
+    if (!csvErrors) return;
 
-    if (!box) return;
 
     if (!errors.length) {
 
-        box.style.display = "none";
+        csvErrors.style.display =
+            "none";
 
-        box.innerHTML = "";
+        csvErrors.innerHTML = "";
 
         return;
+
     }
 
-    box.style.display = "block";
 
-    box.innerHTML = `
+    csvErrors.style.display =
+        "block";
+
+
+    csvErrors.innerHTML = `
 
         <strong>
-            CSV Validation Errors
+            ${errors.length} invalid row(s)
         </strong>
 
         ${errors.map(error => `
+
             <p>
-                ${escapeHTML(error)}
+
+                <b>
+                    Row ${error.rowNumber}:
+                </b>
+
+                ${escapeHtml(
+                    error.errors.join("; ")
+                )}
+
             </p>
+
         `).join("")}
 
     `;
+
 }
 
 
-/* ============================================================
-   SHOW CSV PREVIEW
-   ============================================================ */
+/* =====================================================
+   CSV PREVIEW
+   ===================================================== */
 
-function renderCSVPreview(rows) {
+function renderCsvPreview(
+    validRows,
+    errors
+) {
 
-    const preview =
-        $("csvPreview");
+    if (!csvPreview) return;
 
-    if (!preview) return;
 
-    if (!rows.length) {
+    const previewRows = [
 
-        preview.innerHTML = "";
+        ...validRows.map(row => ({
+            valid: true,
+            row
+        })),
+
+        ...errors.map(error => ({
+            valid: false,
+            row: error.row,
+            rowNumber: error.rowNumber,
+            error: error.errors.join("; ")
+        }))
+
+    ];
+
+
+    if (!previewRows.length) {
+
+        csvPreview.innerHTML = "";
 
         return;
+
     }
 
-    preview.innerHTML = `
+
+    csvPreview.innerHTML = `
 
         <table class="preview-table">
 
@@ -1701,15 +2927,41 @@ function renderCSVPreview(rows) {
 
                 <tr>
 
-                    <th>Row</th>
-                    <th>Category</th>
-                    <th>Question</th>
-                    <th>Option A</th>
-                    <th>Option B</th>
-                    <th>Option C</th>
-                    <th>Option D</th>
-                    <th>Correct</th>
-                    <th>Status</th>
+                    <th>
+                        Row
+                    </th>
+
+                    <th>
+                        Category
+                    </th>
+
+                    <th>
+                        Question
+                    </th>
+
+                    <th>
+                        Option A
+                    </th>
+
+                    <th>
+                        Option B
+                    </th>
+
+                    <th>
+                        Option C
+                    </th>
+
+                    <th>
+                        Option D
+                    </th>
+
+                    <th>
+                        Correct
+                    </th>
+
+                    <th>
+                        Status
+                    </th>
 
                 </tr>
 
@@ -1717,591 +2969,471 @@ function renderCSVPreview(rows) {
 
             <tbody>
 
-                ${rows.map(row => `
+                ${previewRows.map(item => {
 
-                    <tr class="${
-                        row.__valid
-                            ? "valid-row"
-                            : "invalid-row"
-                    }">
+                    const row =
+                        item.row;
 
-                        <td>
-                            ${row.__row}
-                        </td>
 
-                        <td>
-                            ${escapeHTML(
-                                row.category
-                            )}
-                        </td>
+                    return `
 
-                        <td>
-                            ${escapeHTML(
-                                row.question
-                            )}
-                        </td>
+                        <tr
+                            class="${
+                                item.valid
+                                    ? "valid-row"
+                                    : "invalid-row"
+                            }">
 
-                        <td>
-                            ${escapeHTML(
-                                row.option_a
-                            )}
-                        </td>
+                            <td>
+                                ${
+                                    item.rowNumber
+                                        || "✓"
+                                }
+                            </td>
 
-                        <td>
-                            ${escapeHTML(
-                                row.option_b
-                            )}
-                        </td>
+                            <td>
+                                ${escapeHtml(
+                                    row.category
+                                )}
+                            </td>
 
-                        <td>
-                            ${escapeHTML(
-                                row.option_c
-                            )}
-                        </td>
+                            <td>
+                                ${escapeHtml(
+                                    row.question
+                                )}
+                            </td>
 
-                        <td>
-                            ${escapeHTML(
-                                row.option_d
-                            )}
-                        </td>
+                            <td>
+                                ${escapeHtml(
+                                    row.option_a
+                                )}
+                            </td>
 
-                        <td>
-                            ${escapeHTML(
-                                row.correct_answer
-                            )}
-                        </td>
+                            <td>
+                                ${escapeHtml(
+                                    row.option_b
+                                )}
+                            </td>
 
-                        <td>
+                            <td>
+                                ${escapeHtml(
+                                    row.option_c
+                                )}
+                            </td>
 
-                            ${
-                                row.__valid
+                            <td>
+                                ${escapeHtml(
+                                    row.option_d
+                                )}
+                            </td>
 
-                                    ? `<span class="status active">
-                                         Valid
-                                       </span>`
+                            <td>
+                                ${escapeHtml(
+                                    row.correct_answer
+                                )}
+                            </td>
 
-                                    : `<span class="status blocked">
-                                         Invalid
-                                       </span>`
-                            }
+                            <td>
 
-                        </td>
+                                ${
+                                    item.valid
 
-                    </tr>
+                                        ? `
+                                            <span
+                                                class="status active">
+                                                Valid
+                                            </span>
+                                          `
 
-                `).join("")}
+                                        : `
+                                            <span
+                                                class="status blocked"
+                                                title="${escapeHtml(item.error)}">
+
+                                                Invalid
+
+                                            </span>
+                                          `
+                                }
+
+                            </td>
+
+                        </tr>
+
+                    `;
+
+                }).join("")}
 
             </tbody>
 
         </table>
+
     `;
+
 }
 
 
-/* ============================================================
-   VALIDATE CSV
-   ============================================================ */
-
-async function validateCSVFile() {
-
-    const input =
-        $("csvFile");
-
-    if (!input?.files?.length) {
-
-        showMessage(
-            "Please select a CSV file first.",
-            "error"
-        );
-
-        return;
-    }
-
-    const file =
-        input.files[0];
-
-    try {
-
-        const text =
-            await file.text();
-
-        const rows =
-            parseCSV(text);
-
-        const result =
-            validateCSVData(rows);
-
-        validatedCSVRows =
-            result.validRows;
-
-        renderCSVSummary(
-            validatedCSVRows
-        );
-
-        renderCSVErrors(
-            result.errors
-        );
-
-        renderCSVPreview(
-            validatedCSVRows
-        );
-
-        const validCount =
-            validatedCSVRows.filter(
-                row => row.__valid
-            ).length;
-
-        const actions =
-            $("csvImportActions");
-
-        if (actions) {
-
-            actions.style.display =
-                validCount
-                    ? "block"
-                    : "none";
-        }
-
-        if (validCount) {
-
-            showMessage(
-                `${validCount} valid question(s) ready to import.`
-            );
-
-        } else {
-
-            showMessage(
-                "No valid questions found.",
-                "error"
-            );
-        }
-
-    } catch (error) {
-
-        console.error(
-            "CSV validation error:",
-            error
-        );
-
-        showMessage(
-            "Unable to read CSV file.",
-            "error"
-        );
-    }
-}
-
-
-/* ============================================================
-   IMPORT CSV QUESTIONS
-   ============================================================ */
-
-async function importCSVQuestions() {
-
-    const validRows =
-        validatedCSVRows.filter(
-            row => row.__valid
-        );
-
-    if (!validRows.length) {
-
-        showMessage(
-            "No valid questions available for import.",
-            "error"
-        );
-
-        return;
-    }
-
-    const button =
-        $("importCsv");
-
-    if (button) {
-        button.disabled = true;
-    }
-
-    try {
-
-        const records =
-            validRows.map(row => ({
-
-                category:
-                    row.category,
-
-                question:
-                    row.question,
-
-                option_a:
-                    row.option_a,
-
-                option_b:
-                    row.option_b,
-
-                option_c:
-                    row.option_c,
-
-                option_d:
-                    row.option_d,
-
-                correct_answer:
-                    row.correct_answer
-
-            }));
-
-        const {
-            error
-        } = await quizSupabase
-            .from("questions")
-            .insert(records);
-
-        if (error) {
-
-            console.error(
-                "CSV import error:",
-                error
-            );
-
-            showMessage(
-                "Unable to import questions.",
-                "error"
-            );
-
-            return;
-        }
-
-        showMessage(
-            `${records.length} question(s) imported successfully.`
-        );
-
-        validatedCSVRows = [];
-
-        if ($("csvFile")) {
-            $("csvFile").value = "";
-        }
-
-        if ($("csvSummary")) {
-            $("csvSummary").innerHTML = "";
-        }
-
-        if ($("csvErrors")) {
-
-            $("csvErrors").style.display =
-                "none";
-
-            $("csvErrors").innerHTML = "";
-        }
-
-        if ($("csvPreview")) {
-            $("csvPreview").innerHTML = "";
-        }
-
-        if ($("csvImportActions")) {
-
-            $("csvImportActions")
-                .style.display = "none";
-        }
-
-        await loadQuestions();
-        await loadStatistics();
-
-    } finally {
-
-        if (button) {
-            button.disabled = false;
-        }
-    }
-}
-
-
-/* ============================================================
-   DOWNLOAD CSV TEMPLATE
-   ============================================================ */
-
-function downloadCSVTemplate() {
-
-    const rows = [
-
-        {
-
-            category: "Python",
-
-            question:
-                "Which keyword is used to define a function in Python?",
-
-            option_a: "function",
-
-            option_b: "def",
-
-            option_c: "define",
-
-            option_d: "func",
-
-            correct_answer: "B"
-        }
-
-    ];
-
-    downloadCSV(
-        "IT_Arena_Questions_Template.csv",
-        rows
+/* =====================================================
+   VALIDATE BUTTON
+   ===================================================== */
+
+if (validateCsv) {
+
+    validateCsv.addEventListener(
+        "click",
+        validateCSVFile
     );
 
-    showMessage(
-        "CSV template downloaded successfully."
+}
+
+
+/* =====================================================
+   CSV FILE CHANGE
+   ===================================================== */
+
+if (csvFile) {
+
+    csvFile.addEventListener(
+        "change",
+        () => {
+
+            csvHasBeenValidated =
+                false;
+
+            validatedCsvRows = [];
+
+
+            if (csvSummary) {
+
+                csvSummary.innerHTML =
+                    "";
+
+            }
+
+
+            if (csvErrors) {
+
+                csvErrors.style.display =
+                    "none";
+
+                csvErrors.innerHTML =
+                    "";
+
+            }
+
+
+            if (csvPreview) {
+
+                csvPreview.innerHTML =
+                    "";
+
+            }
+
+
+            if (csvImportActions) {
+
+                csvImportActions.style.display =
+                    "none";
+
+            }
+
+        }
     );
+
 }
 
 
-/* ============================================================
-   CANCEL CSV
-   ============================================================ */
+/* =====================================================
+   IMPORT CSV
+   ===================================================== */
 
-function cancelCSV() {
+if (importCsv) {
 
-    validatedCSVRows = [];
+    importCsv.addEventListener(
+        "click",
+        async () => {
 
-    if ($("csvFile")) {
-        $("csvFile").value = "";
-    }
-
-    if ($("csvSummary")) {
-        $("csvSummary").innerHTML = "";
-    }
-
-    if ($("csvErrors")) {
-
-        $("csvErrors").style.display =
-            "none";
-
-        $("csvErrors").innerHTML = "";
-    }
-
-    if ($("csvPreview")) {
-        $("csvPreview").innerHTML = "";
-    }
-
-    if ($("csvImportActions")) {
-
-        $("csvImportActions")
-            .style.display = "none";
-    }
-}
-
-
-/* ============================================================
-   HTML ESCAPE
-   ============================================================ */
-
-function escapeHTML(value) {
-
-    if (
-        value === null ||
-        value === undefined
-    ) {
-        return "";
-    }
-
-    return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-
-/* ============================================================
-   LOGOUT
-   ============================================================ */
-
-async function logout() {
-
-    const {
-        error
-    } = await quizSupabase.auth.signOut();
-
-    if (error) {
-
-        console.error(
-            "Logout error:",
-            error
-        );
-
-        showMessage(
-            "Unable to logout.",
-            "error"
-        );
-
-        return;
-    }
-
-    window.location.href =
-        "login.html";
-}
-
-
-/* ============================================================
-   EVENT LISTENERS
-   ============================================================ */
-
-function setupEventListeners() {
-
-    $("logoutBtn")
-        ?.addEventListener(
-            "click",
-            logout
-        );
-
-
-    $("questionForm")
-        ?.addEventListener(
-            "submit",
-            createQuestion
-        );
-
-
-    $("refreshResults")
-        ?.addEventListener(
-            "click",
-            async () => {
-
-                await loadResults();
-
-                await loadStudents();
-
-                await loadStatistics();
+            if (
+                !csvHasBeenValidated ||
+                !validatedCsvRows.length
+            ) {
 
                 showMessage(
-                    "Admin data refreshed."
+                    "Please validate the CSV before importing.",
+                    "error"
                 );
+
+                return;
+
             }
-        );
 
 
-    $("questionSearch")
-        ?.addEventListener(
-            "input",
-            renderQuestions
-        );
+            const confirmed =
+                window.confirm(
+                    `Import ${validatedCsvRows.length} valid question(s)?`
+                );
 
 
-    $("subjectFilter")
-        ?.addEventListener(
-            "change",
-            renderQuestions
-        );
+            if (!confirmed) return;
 
 
-    $("downloadTemplate")
-        ?.addEventListener(
-            "click",
-            downloadCSVTemplate
-        );
+            importCsv.disabled = true;
 
 
-    $("validateCsv")
-        ?.addEventListener(
-            "click",
-            validateCSVFile
-        );
+            showMessage(
+                "Importing questions..."
+            );
 
 
-    $("importCsv")
-        ?.addEventListener(
-            "click",
-            importCSVQuestions
-        );
+            const {
+                data,
+                error
+            } = await quizSupabase
+                .from("questions")
+                .insert(
+                    validatedCsvRows
+                )
+                .select();
 
 
-    $("cancelCsv")
-        ?.addEventListener(
-            "click",
-            cancelCSV
-        );
+            importCsv.disabled = false;
 
 
-    /*
-       NEW REPORT BUTTONS
+            if (error) {
 
-       These IDs must exist in admin.html:
+                showMessage(
+                    "CSV import failed: " +
+                    error.message,
+                    "error"
+                );
 
-       downloadFinishedCSV
-       downloadWarningsCSV
-    */
+                return;
 
-    $("downloadFinishedCSV")
-        ?.addEventListener(
-            "click",
-            downloadWhoFinishedReport
-        );
+            }
 
 
-    $("downloadWarningsCSV")
-        ?.addEventListener(
-            "click",
-            downloadWarningsBlocksReport
-        );
-}
+            const importedCount =
+                data?.length ||
+                validatedCsvRows.length;
 
 
-/* ============================================================
-   INITIALIZE ADMIN
-   ============================================================ */
-
-async function initAdmin() {
-
-    try {
-
-        const user =
-            await checkAdmin();
-
-        if (!user) return;
-
-        const isAdmin =
-            await checkAdminRole(user);
-
-        if (!isAdmin) return;
+            showMessage(
+                `${importedCount} question(s) imported successfully.`,
+                "success"
+            );
 
 
-        setupEventListeners();
+            /* Reset CSV UI */
+
+            if (csvFile) {
+
+                csvFile.value = "";
+
+            }
 
 
-        await Promise.all([
-            loadStatistics(),
-            loadResults(),
-            loadQuestions(),
-            loadStudents()
-        ]);
+            validatedCsvRows = [];
 
-    } catch (error) {
-
-        console.error(
-            "Admin initialization error:",
-            error
-        );
-
-        showMessage(
-            "Unable to initialize admin panel.",
-            "error"
-        );
-    }
-}
+            csvHasBeenValidated = false;
 
 
-/* ============================================================
-   START
-   ============================================================ */
+            if (csvSummary) {
 
-if (
-    document.readyState ===
-    "loading"
-) {
+                csvSummary.innerHTML =
+                    "";
 
-    document.addEventListener(
-        "DOMContentLoaded",
-        initAdmin
+            }
+
+
+            if (csvErrors) {
+
+                csvErrors.innerHTML =
+                    "";
+
+                csvErrors.style.display =
+                    "none";
+
+            }
+
+
+            if (csvPreview) {
+
+                csvPreview.innerHTML =
+                    "";
+
+            }
+
+
+            if (csvImportActions) {
+
+                csvImportActions.style.display =
+                    "none";
+
+            }
+
+
+            await loadQuestions();
+
+        }
     );
 
-} else {
-
-    initAdmin();
 }
+
+
+/* =====================================================
+   CANCEL CSV
+   ===================================================== */
+
+if (cancelCsv) {
+
+    cancelCsv.addEventListener(
+        "click",
+        () => {
+
+            validatedCsvRows = [];
+
+            csvHasBeenValidated =
+                false;
+
+
+            if (csvFile) {
+
+                csvFile.value = "";
+
+            }
+
+
+            if (csvSummary) {
+
+                csvSummary.innerHTML =
+                    "";
+
+            }
+
+
+            if (csvErrors) {
+
+                csvErrors.innerHTML =
+                    "";
+
+                csvErrors.style.display =
+                    "none";
+
+            }
+
+
+            if (csvPreview) {
+
+                csvPreview.innerHTML =
+                    "";
+
+            }
+
+
+            if (csvImportActions) {
+
+                csvImportActions.style.display =
+                    "none";
+
+            }
+
+
+            showMessage(
+                "CSV import cancelled."
+            );
+
+        }
+    );
+
+}
+
+
+/* =====================================================
+   REFRESH RESULTS
+   ===================================================== */
+
+if (refreshResults) {
+
+    refreshResults.addEventListener(
+        "click",
+        async () => {
+
+            showMessage(
+                "Refreshing admin data..."
+            );
+
+
+            await Promise.all([
+                loadQuestions(),
+                loadResults(),
+                loadStudents()
+            ]);
+
+
+            showMessage(
+                "Admin data refreshed.",
+                "success"
+            );
+
+        }
+    );
+
+}
+
+
+/* =====================================================
+   LOGOUT
+   ===================================================== */
+
+const logoutBtn =
+    document.getElementById("logoutBtn");
+
+
+if (logoutBtn) {
+
+    logoutBtn.addEventListener(
+        "click",
+        async () => {
+
+            const {
+                error
+            } = await quizSupabase
+                .auth
+                .signOut();
+
+
+            if (error) {
+
+                showMessage(
+                    "Logout failed: " +
+                    error.message,
+                    "error"
+                );
+
+                return;
+
+            }
+
+
+            window.location.href =
+                "login.html";
+
+        }
+    );
+
+}
+
+
+/* =====================================================
+   INITIAL LOAD
+   ===================================================== */
+
+await Promise.all([
+    loadQuestions(),
+    loadResults(),
+    loadStudents()
+]);
+
+})();
+
+Close
