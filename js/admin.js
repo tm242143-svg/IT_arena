@@ -1,24 +1,3 @@
-You should not paste that code randomly. It needs to replace the part of your JavaScript that currently creates/loads the subject list.
-
-If your current code has something like:
-
-const subjects = [
-    "Python",
-    "Java",
-    "C++",
-    "DBMS",
-    "HTML",
-    "CSS",
-    "JavaScript",
-    "RPA"
-];
-
-or:
-
-const subjects = ["Python", "Java", "C++", "DBMS"];
-
-then replace that subject-loading logic with a function like this:
-
 async function loadSubjects() {
     const { data, error } = await quizSupabase
         .from("questions")
@@ -3435,5 +3414,3 @@ await Promise.all([
 ]);
 
 })();
-
-Close
