@@ -70,6 +70,12 @@
     const refreshResults =
         document.getElementById("refreshResults");
 
+    const downloadFinishedReport =
+        document.getElementById("downloadFinishedReport");
+
+    const downloadWarningsReport =
+        document.getElementById("downloadWarningsReport");
+
     const questionSearch =
         document.getElementById("questionSearch");
 
@@ -185,6 +191,309 @@
         }
 
         return text;
+    }
+
+
+    /* =====================================================
+       DOWNLOAD CSV
+       ===================================================== */
+
+    function downloadCSV(filename, headers, rows) {
+
+        const csv = [
+            headers,
+            ...rows
+        ]
+            .map(row =>
+                row.map(csvEscape).join(",")
+            )
+            .join("\r\n");
+
+        const blob = new Blob(
+            ["\uFEFF" + csv],
+            {
+                type: "text/csv;charset=utf-8;"
+            }
+        );
+
+        const url =
+            URL.createObjectURL(blob);
+
+        const link =
+            document.createElement("a");
+
+        link.href = url;
+
+        link.download = filename;
+
+        document.body.appendChild(link);
+
+        link.click();
+
+        document.body.removeChild(link);
+
+        setTimeout(() => {
+            URL.revokeObjectURL(url);
+        }, 1000);
+    }
+
+
+    /* =====================================================
+       DOWNLOAD WHO FINISHED REPORT
+       ===================================================== */
+
+    if (downloadFinishedReport) {
+
+        downloadFinishedReport.addEventListener(
+            "click",
+            async () => {
+
+                const originalText =
+                    downloadFinishedReport.textContent;
+
+                downloadFinishedReport.disabled = true;
+
+                downloadFinishedReport.textContent =
+                    "Preparing...";
+
+                try {
+
+                    const {
+                        data,
+                        error
+                    } = await quizSupabase
+                        .rpc("get_admin_results");
+
+                    if (error) {
+                        throw error;
+                    }
+
+
+                    const rows =
+                        (data || []).map(result => {
+
+                            const score =
+                                Number(
+                                    result.score
+                                ) || 0;
+
+                            const total =
+                                Number(
+                                    result.total_questions
+                                ) || 0;
+
+                            const percentage =
+                                Number(
+                                    result.percentage
+                                ) || 0;
+
+
+                            return [
+
+                                result.student_name ||
+                                    "Student",
+
+                                result.email ||
+                                    "",
+
+                                result.subject ||
+                                    result.category ||
+                                    "",
+
+                                score,
+
+                                total,
+
+                                `${percentage}%`,
+
+                                result.completed_at
+                                    ? new Date(
+                                        result.completed_at
+                                    ).toLocaleString()
+                                    : ""
+                            ];
+
+                        });
+
+
+                    downloadCSV(
+
+                        `Who_Finished_${new Date()
+                            .toISOString()
+                            .slice(0, 10)}.csv`,
+
+                        [
+                            "Student",
+                            "Email",
+                            "Subject",
+                            "Score",
+                            "Total Questions",
+                            "Percentage",
+                            "Completed At"
+                        ],
+
+                        rows
+
+                    );
+
+
+                    showMessage(
+                        `${rows.length} completed attempt(s) exported.`,
+                        "success"
+                    );
+
+
+                } catch (error) {
+
+                    console.error(
+                        "Finished report error:",
+                        error
+                    );
+
+                    showMessage(
+                        "Could not download finished report: " +
+                        error.message,
+                        "error"
+                    );
+
+
+                } finally {
+
+                    downloadFinishedReport.disabled =
+                        false;
+
+                    downloadFinishedReport.textContent =
+                        originalText;
+                }
+            }
+        );
+    }
+
+
+    /* =====================================================
+       DOWNLOAD WARNINGS & BLOCKS REPORT
+       ===================================================== */
+
+    if (downloadWarningsReport) {
+
+        downloadWarningsReport.addEventListener(
+            "click",
+            async () => {
+
+                const originalText =
+                    downloadWarningsReport.textContent;
+
+                downloadWarningsReport.disabled = true;
+
+                downloadWarningsReport.textContent =
+                    "Preparing...";
+
+
+                try {
+
+                    const {
+                        data,
+                        error
+                    } = await quizSupabase
+                        .from("profiles")
+                        .select(
+                            "name,email,warning_count,blocked"
+                        )
+                        .eq("role", "student")
+                        .order("name");
+
+
+                    if (error) {
+                        throw error;
+                    }
+
+
+                    const rows =
+                        (data || []).map(student => {
+
+                            const warningCount =
+                                Number(
+                                    student.warning_count
+                                ) || 0;
+
+                            const blocked =
+                                Boolean(
+                                    student.blocked
+                                );
+
+
+                            return [
+
+                                student.name ||
+                                    "Student",
+
+                                student.email ||
+                                    "",
+
+                                warningCount,
+
+                                blocked
+                                    ? "Blocked"
+                                    : "Active",
+
+                                warningCount >= 3
+                                    ? "3 or more warnings"
+                                    : `${warningCount} warning(s)`
+
+                            ];
+
+                        });
+
+
+                    downloadCSV(
+
+                        `Warnings_Blocks_${new Date()
+                            .toISOString()
+                            .slice(0, 10)}.csv`,
+
+                        [
+                            "Student",
+                            "Email",
+                            "Warnings",
+                            "Status",
+                            "Warning Details"
+                        ],
+
+                        rows
+
+                    );
+
+
+                    showMessage(
+                        `${rows.length} student record(s) exported.`,
+                        "success"
+                    );
+
+
+                } catch (error) {
+
+                    console.error(
+                        "Warnings report error:",
+                        error
+                    );
+
+                    showMessage(
+                        "Could not download warnings report: " +
+                        error.message,
+                        "error"
+                    );
+
+
+                } finally {
+
+                    downloadWarningsReport.disabled =
+                        false;
+
+                    downloadWarningsReport.textContent =
+                        originalText;
+                }
+            }
+        );
     }
 
 
@@ -793,13 +1102,6 @@
 
 
         try {
-
-            /*
-             * Your original Admin system uses the
-             * get_admin_results PostgreSQL function.
-             *
-             * We keep that structure here.
-             */
 
             const {
                 data,
@@ -2296,9 +2598,13 @@
 
 
                 await Promise.allSettled([
+
                     loadQuestions(),
+
                     loadResults(),
+
                     loadStudents()
+
                 ]);
 
 
@@ -2370,14 +2676,6 @@
     );
 
 
-    /*
-     * Use Promise.allSettled instead of Promise.all.
-     *
-     * This is important:
-     * if one database operation fails, the other
-     * sections will still load.
-     */
-
     await Promise.allSettled([
 
         loadQuestions(),
@@ -2387,6 +2685,5 @@
         loadStudents()
 
     ]);
-
 
 })();
