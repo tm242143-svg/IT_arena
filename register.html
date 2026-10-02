@@ -1,0 +1,124 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MZ Arena | Register</title>
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/mz-theme.css">
+</head>
+
+<body class="t-reg">
+  <div class="eng-bg" aria-hidden="true">
+    <i class="art a1"></i>
+    <i class="art a2"></i>
+  </div>
+
+  <div class="auth-bg">
+    <div class="auth-code">F = m × a</div>
+
+    <div class="page">
+      <div class="panel auth">
+
+        <img
+          class="auth-logo"
+          src="assets/mzcet-logo.png"
+          alt="MZCET logo"
+        >
+
+        <div class="badge">MZ ARENA · NEW PLAYER</div>
+
+        <h1>Join the <span>squad.</span></h1>
+        <p>Create your student account and enter the arena.</p>
+
+        <form id="registerForm">
+
+          <!-- FULL NAME -->
+          <input
+            id="name"
+            name="name"
+            type="text"
+            placeholder="Full name"
+            autocomplete="name"
+            required
+          >
+
+          <!-- EMAIL -->
+          <input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="Email"
+            autocomplete="email"
+            required
+          >
+
+          <!-- DEPARTMENT -->
+
+          <select
+            id="department"
+            name="department"
+            required
+          >
+            <option value="">Select Department</option>
+            <option value="IT">Information Technology</option>
+            <option value="CSE">Computer Science and Engineering</option>
+            <option value="ECE">Electronics and Communication Engineering</option>
+            <option value="EEE">Electrical and Electronics Engineering</option>
+            <option value="MECH">Mechanical Engineering</option>
+            <option value="CIVIL">Civil Engineering</option>
+            <option value="AIDS">Artificial Intelligence and Data Science</option>
+          </select>
+
+          <!-- YEAR -->
+
+          <select
+            id="year"
+            name="year"
+            required
+          >
+            <option value="">Select Year</option>
+            <option value="1">1st Year</option>
+            <option value="2">2nd Year</option>
+            <option value="3">3rd Year</option>
+            <option value="4">4th Year</option>
+          </select>
+
+          <!-- PASSWORD -->
+          <input
+            id="password"
+            name="password"
+            type="password"
+            minlength="6"
+            placeholder="Password (6+ characters)"
+            autocomplete="new-password"
+            required
+          >
+
+          <!-- SUBMIT -->
+          <button class="btn primary" type="submit">
+            Register
+          </button>
+
+          <div id="msg" class="msg"></div>
+        </form>
+
+        <a href="login.html">
+          Already registered? Login →
+        </a>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+
+  <footer class="mz-foot">
+    Mount Zion College of Engineering and Technology · Pudukkottai
+  </footer>
+</body>
+</html>
